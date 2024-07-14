@@ -42,10 +42,14 @@ interface IDeTrustModelRegistry {
     /**
      * @dev Returns `true` if Fee charged
      */
-    function chargeFee(address _impl, address _creator)
+    function chargeFee(address _impl, address _creator, bytes32 _promoHash)
         external
         payable
-        returns (address feeToken_, uint256 feeAmount_, address feeBeneficiary_);
+        returns (
+            address feeToken_, 
+            uint256 feeAmount_, 
+            address feeBeneficiary_,
+            uint64 prePaiedPeriod_);
 
    
 }

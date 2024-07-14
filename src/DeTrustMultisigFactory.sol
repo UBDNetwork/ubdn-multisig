@@ -74,8 +74,10 @@ contract DeTrustMultisigFactory {
 
             // charge FEE if enabled
             if (_rules & 0x04 == 0x04) {
-                (feep.feeToken, feep.feeAmount, feep.feeBeneficiary) 
-                    =  modelRegistry.chargeFee{value: msg.value}(_implAddress, msg.sender);
+                (feep.feeToken, feep.feeAmount, feep.feeBeneficiary, feep.prePaiedPeriod) 
+                    =  modelRegistry.chargeFee{value: msg.value}(
+                        _implAddress, msg.sender, _promoHash
+                    );
             }
         }
 
@@ -97,7 +99,7 @@ contract DeTrustMultisigFactory {
         bytes memory initCallData = abi.encodeWithSignature(
             "initialize(address,bytes32[],uint64,string,address,uint256,address,uint64)",
             _creator, _inheritorHashes, _periodOrDate, _name, 
-            feep.feeToken, feep.feeAmount, feep.feeBeneficiary
+            feep.feeToken, feep.feeAmount, feep.feeBeneficiary, feep.prePaiedPeriod
         );
         Address.functionCallWithValue(proxy, initCallData, msg.value);
 

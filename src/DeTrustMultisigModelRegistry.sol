@@ -4,6 +4,7 @@
 pragma solidity 0.8.26;
 
 import "./interfaces/IDeTrustModelRegistry.sol";
+import "./interfaces/IPromoCodeManager.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
@@ -29,6 +30,7 @@ contract DeTrustMultisigModelRegistry is IDeTrustModelRegistry, Ownable {
     address public immutable feeBeneficiary;
     mapping(address => TrustModel) public approvedModels;
     address[] public modelsList;
+    address public promoCodeManager;
 
     event ModelChanged(address Model);
     event ModelRemoved(address Model);
@@ -49,10 +51,15 @@ contract DeTrustMultisigModelRegistry is IDeTrustModelRegistry, Ownable {
     /**
      * @dev Returns `true` if Fee charged
      */
-    function chargeFee(address _impl, address _creator)
+    function chargeFee(address _impl, address _creator, bytes32 _promoHash)
         external
         payable
-        returns (address feeToken_, uint256 feeAmount_, address feeBeneficiary_) 
+    returns (
+        address feeToken_, 
+        uint256 feeAmount_, 
+        address feeBeneficiary_, 
+        uint64 prePaiedPeriod_
+    ) 
     {
         TrustModel memory m = approvedModels[_impl];
         feeToken_ = m.feeToken;
@@ -73,6 +80,13 @@ contract DeTrustMultisigModelRegistry is IDeTrustModelRegistry, Ownable {
                     s.transfer(diff);
                 }
             }
+        }
+        if (promoCodeManager != address(0)) {
+            prePaiedPeriod_ = IPromoCodeManager(promoCodeManager).getPrepaidPeriod(
+                _impl,
+                _creator,
+                _promoHash
+            );
         }
     }
 
@@ -97,7 +111,7 @@ contract DeTrustMultisigModelRegistry is IDeTrustModelRegistry, Ownable {
         external 
         view 
         returns (bytes1 _rules) {
-        require(_impl != address(0), "No Zero models");    
+        require(_impl != address(0) && _creator != address(0), "No Zero models");    
         _rules = approvedModels[_impl].rules;
     }
 
@@ -114,6 +128,7 @@ contract DeTrustMultisigModelRegistry is IDeTrustModelRegistry, Ownable {
             IERC20(_m.token).balanceOf(_creator) >= _m.tokenBalance,
             "Too low Balance"
         );
+        _ok = true;
 
     }
 
@@ -166,5 +181,9 @@ contract DeTrustMultisigModelRegistry is IDeTrustModelRegistry, Ownable {
             }
         }
 
+    }
+
+    function setPromoCodeManager(address _contract) external onlyOwner {
+        promoCodeManager = _contract;
     }
 }
