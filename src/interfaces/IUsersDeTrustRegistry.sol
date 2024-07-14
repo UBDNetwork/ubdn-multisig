@@ -8,20 +8,10 @@ pragma solidity 0.8.26;
  */
 interface IUsersDeTrustRegistry {
 
-
-    /**
-     * @dev Returns `true` if after trust registered or revert with reason
-     */
-    function registerTrust(address _trust, address _owner, bytes32 _inheritorHash)
-        external
-        returns (bool _ok);
-
     /**
      * @dev Returns `true` if after trust registered or revert with reason
      */
     function registerTrust(address _trust, address _owner, bytes32[] memory _inheritorHash)
         external
         returns (bool _ok);
-
-   
 }

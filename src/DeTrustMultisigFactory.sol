@@ -47,7 +47,7 @@ contract DeTrustMultisigFactory {
      * in model creation rules.
      * @param _inheritorHashes array, each element is result of `keccak256(abi.encode(inheritorAddress)`
      * for hide inheritor
-     * @param _silence period in seconds after wich inheritor will get acces to
+     * @param _periodOrDate period in seconds after wich inheritor will get acces to
      * funds (in case DeTrusModel_00).
      * @param _name simple string name for trust. 
      */
@@ -57,7 +57,7 @@ contract DeTrustMultisigFactory {
         bytes32[] memory _inheritorHashes,
         uint64  _periodOrDate,
         string memory _name,
-        bytes32 memory _promoHash
+        bytes32  _promoHash
     ) public payable returns(address proxy) 
     {
         FeeParams memory feep;
@@ -99,7 +99,7 @@ contract DeTrustMultisigFactory {
             _creator, _inheritorHashes, _periodOrDate, _name, 
             feep.feeToken, feep.feeAmount, feep.feeBeneficiary
         );
-        Address.functionCallWithValue(proxy, _initCallData, msg.value);
+        Address.functionCallWithValue(proxy, initCallData, msg.value);
 
 
         // Register trust in Trust registry
