@@ -11,9 +11,13 @@ import "./interfaces/IUsersDeTrustRegistry.sol";
  */
 contract UsersDeTrustMultisigRegistry is IUsersDeTrustRegistry, Ownable {
  
+    struct TrustInfo {
+        string name;
+    }
     mapping(address => address[]) public trustOfCreators;
-    mapping(bytes32 => address[]) public trustOfInheritors;
+    mapping(address => address[]) public trustOfInheritors;
     mapping(address => bool) public isDeTrustFactory;
+    mapping(address => TrustInfo) public trustInfo;
     
 
     constructor()
@@ -24,20 +28,24 @@ contract UsersDeTrustMultisigRegistry is IUsersDeTrustRegistry, Ownable {
     /**
      * @dev Register new trust. Must be called only from authorized factory contracts
      * @param _trust  addreess  of creating trust
-     * @param _creator address of DeTrus owner.  
-     * @param _inheritorHashes array of `keccak256(abi.encode(inheritorAddress)`
-     * for hide inheritor befor first sign
+     * @param _inheritors addersses array. Creator must pass as first(0) element 
      */
-    function registerTrust(address _trust, address _creator, bytes32[] memory _inheritorHashes)
+    function registerTrust(
+        address _trust, 
+        address[] memory _inheritors,
+        string memory _name
+    )
         external
         returns (bool _ok)
     {
         require(isDeTrustFactory[msg.sender], "NonAuthorized factory");
-        trustOfCreators[_creator].push(_trust);
+        trustOfCreators[_inheritors[0]].push(_trust);
 
-        for (uint256 i = 0; i < _inheritorHashes.length; ++ i) {
-             trustOfInheritors[_inheritorHashes[i]].push(_trust);
+        for (uint256 i = 0; i < _inheritors.length; ++ i) {
+             trustOfInheritors[_inheritors[i]].push(_trust);
         }
+
+        trustInfo[_trust] = TrustInfo(_name);
         
         _ok = true;
     }
@@ -72,7 +80,7 @@ contract UsersDeTrustMultisigRegistry is IUsersDeTrustRegistry, Ownable {
     function getInheritorTrusts(address _inheritor) external view 
         returns(address[] memory trusts) 
     {
-        bytes32 _inheritorHash =  keccak256(abi.encode(_inheritor));
-        trusts = trustOfInheritors[_inheritorHash];
+        //bytes32 _inheritorHash =  keccak256(abi.encode(_inheritor));
+        trusts = trustOfInheritors[_inheritor];
     }
 } 

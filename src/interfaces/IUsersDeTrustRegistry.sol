@@ -11,7 +11,11 @@ interface IUsersDeTrustRegistry {
     /**
      * @dev Returns `true` if after trust registered or revert with reason
      */
-    function registerTrust(address _trust, address _owner, bytes32[] memory _inheritorHash)
+    function registerTrust(
+        address _trust, 
+        address[] memory _inheritors, 
+        string memory _name
+    )
         external
         returns (bool _ok);
 }

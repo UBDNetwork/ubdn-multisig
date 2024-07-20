@@ -42,20 +42,20 @@ contract DeTrustMultisigFactory {
     /**
      * @dev Deploy proxy for given implementation.
      * @param _implAddress  addreess  of approved and valid implemtation
-     * @param _creator address of DeTrus owner.  So in theory possible to
-     * create detrust for somebody. But only `msg.sender` address will checked
+     * @param _threshold number of sign that enough for execute tx
+     * @param _inheritors addresses array. First address is  DeTrust owner.  So in theory possible to
+     *   create detrust for somebody. But only `msg.sender` address will checked
      * in model creation rules.
-     * @param _inheritorHashes array, each element is result of `keccak256(abi.encode(inheritorAddress)`
-     * for hide inheritor
-     * @param _periodOrDate period in seconds after wich inheritor will get acces to
+     * @param _periodOrDateArray array periods in seconds after wich inheritor will get acces to.
+     *   for each inheritor
      * funds (in case DeTrusModel_00).
      * @param _name simple string name for trust. 
      */
     function deployProxyForTrust(
         address _implAddress, 
-        address _creator,
-        bytes32[] memory _inheritorHashes,
-        uint64  _periodOrDate,
+        uint8 _threshold,
+        address[] memory _inheritors,
+        uint64[] memory _periodOrDateArray,
         string memory _name,
         bytes32  _promoHash
     ) public payable returns(address proxy) 
@@ -81,24 +81,15 @@ contract DeTrustMultisigFactory {
             }
         }
 
-        // proxy = address(new DeTrustProxy_01(
-        //     _implAddress, 
-        //     _creator, // DeTrust owner
-        //     _inheritorHashes,
-        //     _silence,
-        //     _name,
-        //     feep.feeToken, 
-        //     feep.feeAmount, 
-        //     feep.feeBeneficiary
-        // ));
+
 
         // TODO Checks of implementation, caller and calldata(?)
         proxy = Clones.clone(_implAddress);
 
         // INIT
         bytes memory initCallData = abi.encodeWithSignature(
-            "initialize(address,bytes32[],uint64,string,address,uint256,address,uint64)",
-            _creator, _inheritorHashes, _periodOrDate, _name, 
+            "initialize(uint8,address[],uint64[],address,uint256,address,uint64)",
+            _threshold, _inheritors, _periodOrDateArray,  
             feep.feeToken, feep.feeAmount, feep.feeBeneficiary, feep.prePaiedPeriod
         );
         Address.functionCallWithValue(proxy, initCallData, msg.value);
@@ -106,7 +97,7 @@ contract DeTrustMultisigFactory {
 
         // Register trust in Trust registry
         if (address(trustRegistry) != address(0)){
-            trustRegistry.registerTrust(proxy, msg.sender, _inheritorHashes);
+            trustRegistry.registerTrust(proxy, _inheritors, _name);
         }
         emit NewTrust(msg.sender, _implAddress, proxy, _name);
     }

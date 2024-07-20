@@ -6,6 +6,8 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {ContextUpgradeable, Initializable} from "@Uopenzeppelin/contracts/utils/ContextUpgradeable.sol";
+import "@Uopenzeppelin/contracts/utils/cryptography/EIP712Upgradeable.sol"; 
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol"; 
 
 /**
  * @dev This is a  trust model implementation that can execute any encoded transactions.
@@ -19,8 +21,10 @@ import {ContextUpgradeable, Initializable} from "@Uopenzeppelin/contracts/utils/
  */
 contract DeTrustMultisigModel_01 is 
     Initializable, 
-    ContextUpgradeable 
+    ContextUpgradeable,
+    EIP712Upgradeable
 {
+    using ECDSA for bytes32;
     
     struct Fee {
         uint256 feeAmount;
@@ -28,28 +32,36 @@ contract DeTrustMultisigModel_01 is
         uint64  payedTill;
         address feeBeneficiary;
     }
-    /// @custom:storage-location erc7201:ubdn.storage.DeTrustModel_01_Executive
+
+    struct TxSingCheck {
+        address signer;
+        bool isValid;
+        bool signOK;
+    }
+    /// @custom:storage-location erc7201:ubdn.storage.DeTrustMultisigModel_01
     struct DeTrustModelStorage_01 {
         uint256 lastOwnerOp;
-        address creator;
-        uint64 silenceTime;
+        uint256 nonce;
         bool inherited;
-        string name;
+        uint8 threshold;
         Fee fee;
-        bytes32[] inheritorHashes;
+        address[] inheritors;
+        uint64[] silenceTime;
     }
 
     uint64 public constant ANNUAL_FEE_PERIOD = 365 days;
+    uint8  public constant MAX_COSIGNERS_NUMBER = 100; // Including creator
 
-    // keccak256(abi.encode(uint256(keccak256("ubdn.storage.DeTrustModel_01_Executive")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant DeTrustModelStorageLocation =  0xff2b6e649b3b6069e2c6cf1de44ad983104deca6b1cb95d4af42a22212af4000;    
+    // keccak256(abi.encode(uint256(keccak256("ubdn.storage.DeTrustMultisigModel_01")) - 1)) & ~bytes32(uint256(0xff))
+    bytes32 private constant DeTrustModelStorageLocation =  0xcf4a3a360b04d36570cb6bdd7ba148570ed50f35bf2cf98d796cd5493321bd00;    
     
     /**
      * @dev The caller account is not authorized to perform an operation.
      */
     error OwnableUnauthorizedAccount(address account);
-    
-    event EtherTransfer(uint256 amount);
+    error NeedMoreValidSignatures(uint8 needMore);
+    error CoSignerAlreadyExist(address signer);
+    event EtherTransfer(address sender, uint256 amount);
 
     /**
      * @dev Throws if called by any account other than the creator 
@@ -60,24 +72,40 @@ contract DeTrustMultisigModel_01 is
         _;
     }
 
-    // constructor() {
-    //   _disableInitializers();
+    modifier onlySelfSender(){
+        require(_msgSender() == address(this), "Only Self Signed");
+        _;
+    }
+
+    // /**
+    //  * @dev Throws if called by any account other than the creator 
+    //  *  or inheritor after silence time.
+    //  */
+    // modifier whenSigned() {
+    //     _checkSignatures();
+    //     _;
     // }
 
+    constructor() {
+      _disableInitializers();
+    }
+
     function initialize(
-        address _creator,
-        bytes32[] calldata _inheritorHashes,
-        uint64  _silence,
-        string memory _name,
+        uint8 _threshold,
+        address[] calldata _inheritors,
+        uint64[] calldata _silence,
         address _feeToken,
         uint256 _feeAmount,
-        address _feeBeneficiary
+        address _feeBeneficiary,
+        uint64 _feePrepaidPeriod
+       
     ) public initializer
     {
         __DeTrustModel_01_Executive_init(
-            _creator, _inheritorHashes, _silence, _name, 
-            _feeToken, _feeAmount, _feeBeneficiary
+            _threshold, _inheritors, _silence,// _name, 
+            _feeToken, _feeAmount, _feeBeneficiary, _feePrepaidPeriod
         );
+         __EIP712_init("UBDN DeTrust", "0.0.1");
 
     }
 
@@ -87,45 +115,47 @@ contract DeTrustMultisigModel_01 is
      * vesting duration of the vesting wallet.
      */
     function __DeTrustModel_01_Executive_init(
-        address _creator,
-        bytes32[] calldata _inheritorHashes,
-        uint64  _silence,
-        string memory _name,
+        uint8 _threshold,
+        address[] calldata _inheritors,
+        uint64[] calldata  _silence,
         address _feeToken,
         uint256 _feeAmount,
-        address _feeBeneficiary
+        address _feeBeneficiary,
+        uint64 _feePrepaidPeriod
     ) internal onlyInitializing 
     {
         //__Ownable_init_unchained(_owner);
         __DeTrustModel_01_Executive_init_unchained(
-            _creator, _inheritorHashes, _silence, _name, 
-            _feeToken, _feeAmount, _feeBeneficiary
+             _threshold, _inheritors, _silence, //_name, 
+            _feeToken, _feeAmount, _feeBeneficiary, _feePrepaidPeriod
         );
     }
 
     function __DeTrustModel_01_Executive_init_unchained(
-        address _creator,
-        bytes32[] calldata _inheritorHashes,
-        uint64  _silence,
-        string memory _name,
+        uint8 _threshold,
+        address[] calldata _inheritors,
+        uint64[] calldata  _silence,
         address _feeToken,
         uint256 _feeAmount,
-        address _feeBeneficiary
+        address _feeBeneficiary,
+        uint64 _feePrepaidPeriod
+        
     ) internal onlyInitializing 
     {
-        require(_inheritorHashes.length <=100, "Too much inheritors");
+        require(_inheritors.length <= MAX_COSIGNERS_NUMBER, "Too much inheritors");
+        require(_inheritors.length == _silence.length, "Arrays must be equal");
+        require(_threshold <= _inheritors.length, "Not greater then signers count");
+        require(_silence[0] == 0, "Cant restrict owners sign");
         DeTrustModelStorage_01 storage $ = _getDeTrustModel_01_ExecutiveStorage();
-        //$.inheritorHash = _inheritorHash;
-        $.silenceTime = _silence;
-        $.creator = _creator;
         $.lastOwnerOp = block.timestamp;
-        $.name = _name;
         $.fee.feeToken = _feeToken;
         $.fee.feeAmount = _feeAmount;
         $.fee.feeBeneficiary = _feeBeneficiary;
-        $.fee.payedTill = uint64(block.timestamp) + ANNUAL_FEE_PERIOD;
-        for (uint8 i; i < _inheritorHashes.length; ++ i) {
-            $.inheritorHashes.push(_inheritorHashes[i]);
+        $.fee.payedTill = uint64(block.timestamp) + ANNUAL_FEE_PERIOD + _feePrepaidPeriod;
+        $.threshold = _threshold;
+        for (uint8 i; i < _inheritors.length; ++ i) {
+            $.inheritors.push(_inheritors[i]);
+            $.silenceTime.push(_silence[i]);
         }
     }
 
@@ -134,43 +164,10 @@ contract DeTrustMultisigModel_01 is
      * @dev The contract should be able to receive Eth.
      */
     receive() external payable virtual {
-        emit EtherTransfer(msg.value);
+        emit EtherTransfer(msg.sender, msg.value);
     }
 
-    /**
-     * @dev Use this method for acces native token balance
-     * @param _to address of receiver
-     * @param _value value in wei
-     */
-    function transferNative(address _to, uint256 _value) 
-        external
-        onlyCreatorOrInheritor 
-    {
-        DeTrustModelStorage_01 storage $ = _getDeTrustModel_01_ExecutiveStorage();
-        _chargeFee($, 0);
-        Address.sendValue(payable(_to), _value);
-        _updateLastOwnerOp($);
-        //$.lastOwnerOp = block.timestamp;
-        emit EtherTransfer(_value);
-    }
-
-    /**
-     * @dev Use this method for acces ERC20 token balance
-     * @param _token address of ERC20 asset
-     * @param _to address of receiver
-     * @param _amount value in wei
-     */
-    function transferERC20(address _token, address _to, uint256 _amount) 
-        external 
-        onlyCreatorOrInheritor
-    {
-       DeTrustModelStorage_01 storage $ = _getDeTrustModel_01_ExecutiveStorage();
-       _chargeFee($, 0);
-       SafeERC20.safeTransfer(IERC20(_token), _to, _amount);
-       //$.lastOwnerOp = block.timestamp;
-       _updateLastOwnerOp($);
-    }
-
+    
     /**
      * @dev Call this method for extend (reset) silnce time counter.
      */
@@ -189,13 +186,14 @@ contract DeTrustMultisigModel_01 is
     function executeOp(
         address _target,
         uint256 _value,
-        bytes memory _data
-    ) external onlyCreatorOrInheritor returns (bytes memory r) {
-        require(_target != address(this), "No Trust itself");
+        bytes memory _data,
+        bytes[] memory _signatures
+    ) public onlyCreatorOrInheritor returns (bytes memory r) {
+        //require(_target != address(this), "No Trust itself");
         DeTrustModelStorage_01 storage $ = _getDeTrustModel_01_ExecutiveStorage();
         _chargeFee($, 0);
         _updateLastOwnerOp($);
-        r = Address.functionCallWithValue(_target, _data, _value);
+        r = _checkSignaturesAndExecute($, _target, _value, _data, _signatures);
     }
 
     /**
@@ -203,19 +201,26 @@ contract DeTrustMultisigModel_01 is
      * @param _targetArray addressed of dApp smart contract
      * @param _valueArray amount of native token in every tx(msg.value)
      * @param _dataArray ABI encoded transaction payloads
+     * 
+     * @param _signaturesArray array if signatures array for each tx
+     * https://docs.soliditylang.org/en/develop/types.html#arrays
+     * For example, if you have a variable uint[][5] memory x, you access the seventh 
+     * uint in the third dynamic array using x[2][6], and to access the third dynamic 
+     * array, use x[2]. Again, if you have an array T[5] a for a type T that can also 
+     * be an array, then a[2] always has type T.
      */
     function executeMultiOp(
         address[] calldata _targetArray,
         uint256[] calldata _valueArray,
-        bytes[] memory _dataArray
-    ) external onlyCreatorOrInheritor returns (bytes[] memory r) {
+        bytes[] memory _dataArray,
+        bytes[][] memory _signaturesArray
+    ) external  returns (bytes[] memory r) {
         DeTrustModelStorage_01 storage $ = _getDeTrustModel_01_ExecutiveStorage();
         _chargeFee($, 0);
         _updateLastOwnerOp($);
         r = new bytes[](_dataArray.length);
         for (uint256 i = 0; i < _dataArray.length; ++ i){
-            require(_targetArray[i] != address(this), "No Trust itself");
-            r[i] = Address.functionCallWithValue(_targetArray[i], _dataArray[i], _valueArray[i]);
+            r[i] =executeOp(_targetArray[i], _valueArray[i], _dataArray[i], _signaturesArray[i]);
         }
     }
 
@@ -231,13 +236,74 @@ contract DeTrustMultisigModel_01 is
     }
 
     /**
-     * @dev Use this method for for charge fee debt if exist. Available for 
+     * @dev Use this method for  charge fee debt if exist. Available for 
      * any address, for example platform owner
      */
-    function chargeAnnualFee() external {
+    function chargeAnnualFee() external  {
         DeTrustModelStorage_01 storage $ = _getDeTrustModel_01_ExecutiveStorage();
         _chargeFee($, 0);
     }
+
+    /**
+     * @dev Use this method to change multisig threshold. 
+     * @param _newThreshold !!! must be greater or equal current cosigners number
+     */
+    function changeThreshold(uint8 _newThreshold) external onlySelfSender {
+        DeTrustModelStorage_01 storage $ = _getDeTrustModel_01_ExecutiveStorage();
+        require(_newThreshold >= $.inheritors.length, "New Threshold less than co-signers count");
+        $.threshold = _newThreshold;
+    }
+
+    /**
+     * @dev Add signer
+     * @param _newSigner new signer address
+     * @param _newPeriod new signer time param(dends on implementation)
+     */ 
+    function addSigner(address _newSigner, uint64 _newPeriod) 
+        external 
+        onlySelfSender
+        returns(uint8 signersCount)
+    {
+        require(_newSigner != address(0), "No Zero address");
+        DeTrustModelStorage_01 storage $ = _getDeTrustModel_01_ExecutiveStorage();
+        // increase count for succesfull tx (GAS SAFE)
+        signersCount = uint8($.inheritors.length + 1);
+        require(signersCount <= MAX_COSIGNERS_NUMBER, "Too much inheritors");
+
+        // check no double
+        for (uint256 i = 0; i < signersCount - 1; ++ i) {
+            if ($.inheritors[i] == _newSigner) {
+                revert CoSignerAlreadyExist(_newSigner);
+            }
+        }
+        $.inheritors.push(_newSigner);
+        $.silenceTime.push(_newPeriod);
+    }
+
+
+    
+    /**
+     * @dev Remove signer with appropriate check
+     * @param _signerIndex index of signer address in array
+     */ 
+    function removeSignerByIndex(uint256 _signerIndex) 
+        external  
+        returns(uint8 signersCount)
+    {
+        DeTrustModelStorage_01 storage $ = _getDeTrustModel_01_ExecutiveStorage();
+        // decrease count for succesfull tx (GAS SAFE)
+        signersCount = uint8($.inheritors.length - 1);
+        require(signersCount >= $.threshold, "New Signers count less then threshold");
+
+        // if deleting index is not last array element then need to replace it with last
+        if (_signerIndex != signersCount + 1) {
+            $.inheritors[_signerIndex] = $.inheritors[signersCount + 1];
+            $.silenceTime[_signerIndex] = $.silenceTime[signersCount + 1];
+        }
+        $.inheritors.pop();
+        $.silenceTime.pop();
+    }
+
 
     ///////////////////////////////////////////////////////////////////////////
     /**
@@ -257,13 +323,13 @@ contract DeTrustMultisigModel_01 is
      */
     function creator() external view returns(address){
         DeTrustModelStorage_01 storage $ = _getDeTrustModel_01_ExecutiveStorage();
-        return $.creator;
+        return $.inheritors[0];
     }
 
     /**
      * @dev Returns full DeTrust info
      */
-    function trustInfo_01() external pure returns(DeTrustModelStorage_01 memory trust){
+    function getDeTrustMultisigInfo_01() external pure returns(DeTrustModelStorage_01 memory trust){
         trust = _getDeTrustModel_01_ExecutiveStorage();
     }
 
@@ -275,13 +341,24 @@ contract DeTrustMultisigModel_01 is
         isPayed = $.fee.payedTill >= uint64(block.timestamp); 
     }
 
+    function txDataDigest(
+        address _target, 
+        uint256 _value, 
+        bytes memory _data, 
+        uint256 _nonce
+    ) internal view returns(bytes32 digest) 
+    {
+        return _txDataDigest(_target, _value, _data, _nonce);
+    }
+
     ////////////////////////////////////////////////////////////////////////
 
     /**
      * @dev Refresh last operation timestamp
      */
     function _updateLastOwnerOp(DeTrustModelStorage_01 storage st) internal {
-        if (_isInList(st)) {
+        (bool isIn,) = _isInList(st);
+        if (isIn) {
             // if code here hence time condition are OK 
             // and from this moment assete are inherited
             st.inherited = true;
@@ -336,12 +413,12 @@ contract DeTrustMultisigModel_01 is
      */
     function _checkCreatorOrInheritor() internal view virtual {
         DeTrustModelStorage_01 storage $ = _getDeTrustModel_01_ExecutiveStorage();
-        bool isInInheritorList = _isInList($);
+        (bool isInInheritorList, uint256 stm) = _isInList($);
          if (
-                ($.creator != _msgSender()) && !isInInheritorList
+                ($.inheritors[0] != _msgSender()) && !isInInheritorList
                 ||
             (
-                  isInInheritorList && (block.timestamp < ($.lastOwnerOp + uint256($.silenceTime)))
+                  isInInheritorList && (block.timestamp < ($.lastOwnerOp + stm))
             )
         )
         {
@@ -350,11 +427,13 @@ contract DeTrustMultisigModel_01 is
     }
 
     function _isInList(DeTrustModelStorage_01 storage st) internal view 
-        returns(bool r)
+        returns(bool r, uint256 silenceTime_)
     {
-        for (uint256 i = 0; i < st.inheritorHashes.length; ++ i) {
-            if (st.inheritorHashes[i] == keccak256(abi.encode(_msgSender()))) {
+        // start from second[1] element because first[0] is crteator
+        for (uint256 i = 1; i < st.inheritors.length; ++ i) {
+            if (st.inheritors[i] == _msgSender()) {
                 r = true;
+                silenceTime_ = uint256(st.silenceTime[i]);
                 break;
             }
         }
@@ -367,4 +446,90 @@ contract DeTrustMultisigModel_01 is
             $.slot := DeTrustModelStorageLocation
         }
     }
+
+    ////////////////////////////////////////////
+    ///////   Multisig internal functions    ///
+    ////////////////////////////////////////////
+    function _checkSignaturesAndExecute(
+        DeTrustModelStorage_01 storage st,
+        address _target,
+        uint256 _value,
+        bytes memory _data,
+        bytes[] memory _signatures
+    ) internal returns(bytes memory r) {
+        bytes32  dgst =_txDataDigest(_target, _value, _data, st.nonce);
+        _checkSignaturesForDigest(st, dgst, _signatures);
+        r = Address.functionCallWithValue(_target, _data, _value);
+        st.nonce ++;
+
+    }
+    
+    
+    function _txDataDigest(
+        address _target, 
+        uint256 _value, 
+        bytes memory _data, 
+        uint256 _nonce
+    ) internal view returns(bytes32 digest) {
+        digest =  _hashTypedDataV4(
+            keccak256(abi.encode(_target, _value, keccak256(_data), _nonce))
+        );
+    }
+
+    function _checkSignaturesForDigest(
+        DeTrustModelStorage_01 storage st,
+        bytes32 _digest, 
+        bytes[] memory _signatures
+    ) internal view returns(bool ok)
+    {
+        TxSingCheck[] memory checkList = new TxSingCheck[](st.inheritors.length);
+        // Fill cheklist with signers data for safe gas. Becuase we need compare 
+        // all signatures with all records.
+        for (uint256 i = 0; i < checkList.length; ++ i){
+            checkList[i].signer = st.inheritors[i];
+            // !!!! Main signer validity rule  is here
+            checkList[i].isValid = _isValidSignerRecord(st, i);
+        }
+        uint8 thresholdCounter = st.threshold;
+
+        for (uint256 i = 0; i < _signatures.length; ++ i) {
+            // recover signer address
+            address signedBy = _digest.recover(_signatures[i]); 
+            for (uint256 j = 0; j < checkList.length; ++ j) {
+                if (
+                    // record with exact signer
+                    checkList[i].signer == signedBy
+
+                    // no double signs with one saddress
+                    && !checkList[i].signOK  
+
+                    // signer is valid to sign tx
+                    && checkList[i].isValid
+                ) 
+                {
+                    checkList[i].signOK = true;
+                    thresholdCounter --;
+                    break;
+                }
+            }
+            if (thresholdCounter == 0) {
+                ok = true;
+                break; 
+            }     
+        }
+        if (!ok) {
+            // Error not enough valid signatures
+            revert NeedMoreValidSignatures(thresholdCounter);
+        }
+    }
+
+    function _isValidSignerRecord(DeTrustModelStorage_01 storage st, uint256 _signerIndex)
+        internal
+        virtual
+        view
+        returns(bool valid)
+    {
+        // !!!! Main signer validity rule  is here
+        valid = st.silenceTime[_signerIndex] + st.lastOwnerOp <= block.timestamp;
+    } 
 }

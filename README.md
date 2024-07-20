@@ -1,18 +1,4 @@
-# UBD Network De Trust
-## Foundry
-
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
-
-Foundry consists of:
-
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
-
-## Documentation
-
-https://book.getfoundry.sh/
+# UBD Network De Trust Multisig
 
 ## Usage
 
@@ -70,7 +56,7 @@ $ forge verify-contract 0xCe05ABB733072Bb81bc16802120729f910299Bc9  ./src/DeTrus
 
 $ cast  send 0x663BeF18503572FC29d7db80cb79e44A9DBC4672  "setModelState(address,(bytes1,address,uint256,address,uint256))" "0xCe05ABB733072Bb81bc16802120729f910299Bc9" "(0x07,0x7ce7abb7F8794dCe67FB2dc4d8eBf2F033472730,1000000000000000000,0x7ce7abb7F8794dCe67FB2dc4d8eBf2F033472730,22000000000000000000)" --rpc-url sepolia  --account ttwo
 ```
-```
+
 ### Verify
 ```shell
 $ forge verify-contract 0x0e332Ee59191CD43a035fB705e82e53934cd2014  ./src/DeTrustFactory.sol:DeTrustFactory  --num-of-optimizations 200 --compiler-version 0.8.23 --etherscan-api-key ${ETHERSCAN_TOKEN} --chain 11155111 --constructor-args $(cast abi-encode "constructor(address modelReg, address userReg)" 0x1b813d6F365294535e4aB10c4547EcD05B39bE07 0xde03361b17c0cCa0A8E3a9864283CF9f46dA3f40)
