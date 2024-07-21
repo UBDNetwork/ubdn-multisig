@@ -1,14 +1,9 @@
 // SPDX-License-Identifier: MIT
-// UBD Network DeTrustModel_01_Executive
+// UBD Network DeTrustMultisigModel_01
 pragma solidity 0.8.26;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-// import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-// import {ContextUpgradeable, Initializable} from "@Uopenzeppelin/contracts/utils/ContextUpgradeable.sol";
-// import "@Uopenzeppelin/contracts/utils/cryptography/EIP712Upgradeable.sol"; 
-// import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol"; 
 import "./MultisigOffchainBase_01.sol";
+import "./FeeManager_01.sol";
 
 /**
  * @dev This is a  trust model implementation that can execute any encoded transactions.
@@ -20,33 +15,17 @@ import "./MultisigOffchainBase_01.sol";
  * 
  * !!! This is implementation contract for proxy conatract creation
  */
-contract DeTrustMultisigModel_01 is MultisigOffchainBase_01
-    // Initializable, 
-    // ContextUpgradeable,
-    // EIP712Upgradeable
-{
-    //using ECDSA for bytes32;
-    
-    struct Fee {
-        uint256 feeAmount;
-        address feeToken;
-        uint64  payedTill;
-        address feeBeneficiary;
-    }
+contract DeTrustMultisigModel_01 is MultisigOffchainBase_01, FeeManager_01
 
-    // struct TxSingCheck {
-    //     address signer;
-    //     bool isValid;
-    //     bool signOK;
-    // }
+{
+    
     /// @custom:storage-location erc7201:ubdn.storage.DeTrustMultisigModel_01
     struct DeTrustModelStorage_01 {
         uint256 lastOwnerOp;
         bool inherited;
-        Fee fee;
     }
 
-    uint64 public constant ANNUAL_FEE_PERIOD = 365 days;
+    //uint64 public constant ANNUAL_FEE_PERIOD = 365 days;
 
     // keccak256(abi.encode(uint256(keccak256("ubdn.storage.DeTrustMultisigModel_01")) - 1)) & ~bytes32(uint256(0xff))
     bytes32 private constant DeTrustModelStorage_01Location =  0xcf4a3a360b04d36570cb6bdd7ba148570ed50f35bf2cf98d796cd5493321bd00;    
@@ -66,16 +45,13 @@ contract DeTrustMultisigModel_01 is MultisigOffchainBase_01
         _;
     }
 
-   
-
-    // /**
-    //  * @dev Throws if called by any account other than the creator 
-    //  *  or inheritor after silence time.
-    //  */
-    // modifier whenSigned() {
-    //     _checkSignatures();
-    //     _;
-    // }
+    
+    /**
+     * @dev The contract should be able to receive Eth.
+     */
+    receive() external payable virtual {
+        emit EtherTransfer(msg.sender, msg.value);
+    }
 
     constructor() {
       _disableInitializers();
@@ -92,9 +68,7 @@ contract DeTrustMultisigModel_01 is MultisigOffchainBase_01
        
     ) public initializer
     {
-        __DeTrustMultisigModel_01_init(
-            _feeToken, _feeAmount, _feeBeneficiary, _feePrepaidPeriod
-        );
+        __DeTrustMultisigModel_01_init();
         
         // In this model we use 1st cosigners slot as owner(or creator) slot
         require(_silence[0] == 0, "Cant restrict owners sign");
@@ -104,6 +78,10 @@ contract DeTrustMultisigModel_01 is MultisigOffchainBase_01
         
         __EIP712_init("UBDN DeTrust Multisig", "0.0.1");
 
+        __FeeManager_01_init(
+            _feeToken, _feeAmount, _feeBeneficiary, _feePrepaidPeriod
+        );
+
     }
 
     /**
@@ -111,52 +89,25 @@ contract DeTrustMultisigModel_01 is MultisigOffchainBase_01
      * the start timestamp and the
      * vesting duration of the vesting wallet.
      */
-    function __DeTrustMultisigModel_01_init(
-        address _feeToken,
-        uint256 _feeAmount,
-        address _feeBeneficiary,
-        uint64 _feePrepaidPeriod
-    ) internal onlyInitializing 
+    function __DeTrustMultisigModel_01_init() internal onlyInitializing 
     {
         //__Ownable_init_unchained(_owner);
-        __DeTrustMultisigModel_01_init_unchained(
-             _feeToken, _feeAmount, _feeBeneficiary, _feePrepaidPeriod
-        );
+        __DeTrustMultisigModel_01_init_unchained();
     }
 
-    function __DeTrustMultisigModel_01_init_unchained(
-        address _feeToken,
-        uint256 _feeAmount,
-        address _feeBeneficiary,
-        uint64 _feePrepaidPeriod
-        
-    ) internal onlyInitializing 
+    function __DeTrustMultisigModel_01_init_unchained() internal onlyInitializing 
     {
         
         DeTrustModelStorage_01 storage $ = _getDeTrustModel_01_ExecutiveStorage();
         $.lastOwnerOp = block.timestamp;
-        $.fee.feeToken = _feeToken;
-        $.fee.feeAmount = _feeAmount;
-        $.fee.feeBeneficiary = _feeBeneficiary;
-        $.fee.payedTill = uint64(block.timestamp) + ANNUAL_FEE_PERIOD + _feePrepaidPeriod;
-        
     }
 
-
     /**
-     * @dev The contract should be able to receive Eth.
-     */
-    receive() external payable virtual {
-        emit EtherTransfer(msg.sender, msg.value);
-    }
-
-    
-    /**
-     * @dev Call this method for extend (reset) silnce time counter.
+     * @dev Call this method for extend (reset) silence time counter.
      */
     function iAmAlive() external onlyCreatorOrInheritor {
        DeTrustModelStorage_01 storage $ = _getDeTrustModel_01_ExecutiveStorage();
-       _chargeFee($, 0);
+       _chargeFee(0);
        _updateLastOwnerOp($);
     }
 
@@ -174,7 +125,7 @@ contract DeTrustMultisigModel_01 is MultisigOffchainBase_01
     ) public onlyCreatorOrInheritor returns (bytes memory r) {
         //require(_target != address(this), "No Trust itself");
         DeTrustModelStorage_01 storage $ = _getDeTrustModel_01_ExecutiveStorage();
-        _chargeFee($, 0);
+        _chargeFee(0);
         r = _checkSignaturesAndExecute(_target, _value, _data, _signatures);
         _updateLastOwnerOp($);
     }
@@ -199,7 +150,7 @@ contract DeTrustMultisigModel_01 is MultisigOffchainBase_01
         bytes[][] memory _signaturesArray
     ) external  returns (bytes[] memory r) {
         DeTrustModelStorage_01 storage $ = _getDeTrustModel_01_ExecutiveStorage();
-        _chargeFee($, 0);
+        _chargeFee(0);
         _updateLastOwnerOp($);
         r = new bytes[](_dataArray.length);
         for (uint256 i = 0; i < _dataArray.length; ++ i){
@@ -215,8 +166,7 @@ contract DeTrustMultisigModel_01 is MultisigOffchainBase_01
      * @param _numberOfPeriods to pay fee in advance
      */
     function payFeeAdvance(uint64 _numberOfPeriods) external onlyCreatorOrInheritor {
-        DeTrustModelStorage_01 storage $ = _getDeTrustModel_01_ExecutiveStorage();
-        _chargeFee($, _numberOfPeriods);
+        _chargeFee(_numberOfPeriods);
     }
 
     /**
@@ -224,8 +174,7 @@ contract DeTrustMultisigModel_01 is MultisigOffchainBase_01
      * any address, for example platform owner
      */
     function chargeAnnualFee() external  {
-        DeTrustModelStorage_01 storage $ = _getDeTrustModel_01_ExecutiveStorage();
-        _chargeFee($, 0);
+        _chargeFee(0);
     }
 
 
@@ -247,53 +196,7 @@ contract DeTrustMultisigModel_01 is MultisigOffchainBase_01
         trust = _getDeTrustModel_01_ExecutiveStorage();
     }
 
-    /**
-     * @dev Returns true during payed period
-     */
-    function isAnnualFeePayed() external view returns(bool isPayed){
-        DeTrustModelStorage_01 storage $ = _getDeTrustModel_01_ExecutiveStorage();
-        isPayed = $.fee.payedTill >= uint64(block.timestamp); 
-    }
-
-
     ////////////////////////////////////////////////////////////////////////
-
-    function _chargeFee(
-        DeTrustModelStorage_01 storage st, 
-        uint64 _numberOfPeriods
-    ) internal 
-    {
-        if (_numberOfPeriods == 0) {
-            _numberOfPeriods = _feeDebtPeriodsNumber(
-                st.fee.payedTill - ANNUAL_FEE_PERIOD, // LAST PAYED DATE
-                uint64(block.timestamp)               // Now
-            );
-        }
-        if (st.fee.feeAmount > 0 && _numberOfPeriods > 0){
-            if (st.fee.feeToken != address(0)){
-                SafeERC20.safeTransfer(
-                    IERC20(st.fee.feeToken),
-                    st.fee.feeBeneficiary, 
-                    st.fee.feeAmount * _numberOfPeriods
-                );
-            } else {
-                address payable s = payable(st.fee.feeBeneficiary);
-                s.transfer(st.fee.feeAmount  * _numberOfPeriods);
-            }
-            st.fee.payedTill += ANNUAL_FEE_PERIOD * _numberOfPeriods;
-        }
-    }
-
-    function _feeDebtPeriodsNumber(uint64 _lastPayedDate, uint64 _debtDate) 
-        internal 
-        pure
-        returns(uint64 number)
-    {
-        if (_lastPayedDate  < _debtDate) {
-            number = (_debtDate - _lastPayedDate) / ANNUAL_FEE_PERIOD;
-        }
-    }
-
     /**
      * @dev Refresh last operation timestamp
      */
@@ -317,18 +220,6 @@ contract DeTrustMultisigModel_01 is MultisigOffchainBase_01
         }
     }
 
-    // function _isInList(DeTrustModelStorage_01 storage st) internal view 
-    //     returns(bool r, uint256 silenceTime_)
-    // {
-    //     // start from second[1] element because first[0] is crteator
-    //     for (uint256 i = 1; i < st.inheritors.length; ++ i) {
-    //         if (st.inheritors[i] == _msgSender()) {
-    //             r = true;
-    //             silenceTime_ = uint256(st.silenceTime[i]);
-    //             break;
-    //         }
-    //     }
-    // }
 
     function _getDeTrustModel_01_ExecutiveStorage() 
         private pure returns (DeTrustModelStorage_01 storage $) 

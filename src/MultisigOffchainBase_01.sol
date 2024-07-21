@@ -113,7 +113,6 @@ abstract contract MultisigOffchainBase_01 is
         require(_cosignersAddresses.length <= MAX_COSIGNERS_NUMBER, "Too much inheritors");
         require(_cosignersAddresses.length == _validFrom.length, "Arrays must be equal");
         require(_threshold <= _cosignersAddresses.length, "Not greater then signers count");
-        //require(_validFrom[0] == 0, "Cant restrict owners sign");
         MultisigOffchainBase_01_Storage storage $ = _getMultisigOffchainBase_01_Storage();
         $.threshold = _threshold;
         for (uint8 i; i < _cosignersAddresses.length; ++ i) {
