@@ -122,7 +122,7 @@ contract DeTrustMultisigModel_01 is MultisigOffchainBase_01, FeeManager_01
         uint256 _value,
         bytes memory _data,
         bytes[] memory _signatures
-    ) public onlyCreatorOrInheritor returns (bytes memory r) {
+    ) public  returns (bytes memory r) {
         //require(_target != address(this), "No Trust itself");
         DeTrustModelStorage_01 storage $ = _getDeTrustModel_01_ExecutiveStorage();
         _chargeFee(0);

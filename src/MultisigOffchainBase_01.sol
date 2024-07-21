@@ -270,7 +270,7 @@ abstract contract MultisigOffchainBase_01 is
         uint256 _value, 
         bytes memory _data, 
         uint256 _nonce
-    ) internal view virtual returns(bytes32 digest) 
+    ) external view virtual returns(bytes32 digest) 
     {
         return _txDataDigest(_target, _value, _data, _nonce);
     }
@@ -318,6 +318,7 @@ abstract contract MultisigOffchainBase_01 is
         bytes[] memory _signatures
     ) internal returns(bytes memory r) {
         MultisigOffchainBase_01_Storage storage $ = _getMultisigOffchainBase_01_Storage();
+        require(_signatures.length <= $.cosigners.length, "Too much signatures");
         bytes32  dgst =_txDataDigest(_target, _value, _data, $.nonce);
         _checkSignaturesForDigest($, dgst, _signatures);
         $.nonce ++;
