@@ -7,23 +7,37 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {DeTrustMultisigFactory} from "../src/DeTrustMultisigFactory.sol";
 import {DeTrustMultisigModel_01} from "../src/DeTrustMultisigModel_01.sol";
 import {MockERC20} from "../src/mock/MockERC20.sol";
+
+import {MultisigOffchainBase_01} from "../src/MultisigOffchainBase_01.sol";
 //import {ITrustModel_00} from "../src/interfaces/ITrustModel_00.sol";
 
 // Digest for sign
 // 0xa42d2b80860bfa2bba37a9d48246f4f2a9f02fbdeeb9b291788dbfe16da6912e
 
+// Digest for sign EIP-191
+//  0x02d9085053cfcd659933470c8f4eb22a5de509c4f5ea062690d9702bbdf74227
+
+// Digest for sign EIP-712
+//  0xc3f329dc22e0ec16e2b55712cc9a9198905b3c8a6d4bcd7c56588d99ee55737f 
+
 // Address:     0x7EC0BF0a4D535Ea220c6bD961e352B752906D568
 // Private key: 0x1bbde125e133d7b485f332b8125b891ea2fbb6a957e758db72e6539d46e2cd71
-// Signature:   0x18a2060e6d51e1a8bce0a7820214d409c785ed4d6d5dc2fbf7b3eb809adc365f206a6b2f56a5793480b567b0856a3c67b5fb25322c0f6b58932af53927de5c921b
+// Signature:   
+//              
+// 191          0xb7778cfa573b0b7db5f017ed3191c29c9b2b9e29e75da895b40efa9438228a217ce172b716dc3ecc42400a622c73029478757555250f5df0f4b7cf70c6fe9f961c       
 
 // Address:     0x4b664eD07D19d0b192A037Cfb331644cA536029d
 // Private key: 0x3480b19b170c5e63c0bdb18d08c4a99628194c7dceaf79e0e17431f4a5c7b1f2
-// Signature:   0xa3cfaff3a5e772948034b5a099cfa27d6dfa30325375f9950bc9ed84cc0d601a56c990cdc87f81d68bdfbfb86d02e0f54446a773ff334f3b670c009b18f8dd9d1b
+// Signature:   
+//              
+// 191          0x5868dce3be256881e451497c0babe90939cf61f8376974d813e7de95dcfa6a2957bd477a3a3da10f044d5eb320497850f35ad5762bef98fd0a5fee8dbc3a510f1c
+
 
 // Address:     0xd7DE4B1214bFfd5C3E9Fb8A501D1a7bF18569882
 // Private key: 0x8ba574046f1e9e372e805aa6c5dcf5598830df5a78605b7713bf00f2f3329148
-// Signature: 0x53a1a493a25b65aa4bca11d2971d61ee04477274372daa5bbb04b6a163fd7fd10f4a9e5921de5a2ae4f4d92d76894e94f97c7b839b0bbc1d4f48d35e0ce2700b1b
-
+// Signature: 
+//            
+// 191        0x5014aea841b32dcff43d8c08d5cf1d13a5cf2b8097a2ee34950e3cc0f1e0d24004eeba47bc09bf9846bfd060b39d8ead08a537ef6e3df2f7bd8a7fcb781a605b1c
 contract FactoryTest_m_01 is Test {
     address public constant addr1 = 0x7EC0BF0a4D535Ea220c6bD961e352B752906D568;
     address public constant addr2 = 0x4b664eD07D19d0b192A037Cfb331644cA536029d;
@@ -58,8 +72,8 @@ contract FactoryTest_m_01 is Test {
         _inheritors[2] = addr3;
         uint64[] memory _periodOrDateArray = new uint64[](3);
         _periodOrDateArray[0] = uint64(0);
-        _periodOrDateArray[1] = uint64(1);
-        _periodOrDateArray[2] = uint64(2);
+        _periodOrDateArray[1] = uint64(0);
+        _periodOrDateArray[2] = uint64(0);
         proxy = payable(factory.deployProxyForTrust(
             address(impl_00),
             2, 
@@ -87,23 +101,26 @@ contract FactoryTest_m_01 is Test {
     function test_erc20Transfer() public {
 
         bytes memory _data = abi.encodeWithSignature(
-            "transferERC20(address,address,uint256)",
-            address(erc20), address(this), sendERC20Amount/2
+            "transfer(address,uint256)",
+            address(this), sendERC20Amount/2
         );
-        // get digest for sign
+       
         DeTrustMultisigModel_01 multisig_instance = DeTrustMultisigModel_01(proxy);
         bytes[] memory _signatures = new bytes[](3);
-        _signatures[0] = hex"18a2060e6d51e1a8bce0a7820214d409c785ed4d6d5dc2fbf7b3eb809adc365f206a6b2f56a5793480b567b0856a3c67b5fb25322c0f6b58932af53927de5c921b";
-        _signatures[1] = hex"a3cfaff3a5e772948034b5a099cfa27d6dfa30325375f9950bc9ed84cc0d601a56c990cdc87f81d68bdfbfb86d02e0f54446a773ff334f3b670c009b18f8dd9d1b";
-        _signatures[2] = hex"53a1a493a25b65aa4bca11d2971d61ee04477274372daa5bbb04b6a163fd7fd10f4a9e5921de5a2ae4f4d92d76894e94f97c7b839b0bbc1d4f48d35e0ce2700b1b";
+        _signatures[0] = hex"b7778cfa573b0b7db5f017ed3191c29c9b2b9e29e75da895b40efa9438228a217ce172b716dc3ecc42400a622c73029478757555250f5df0f4b7cf70c6fe9f961c";
+        _signatures[1] = hex"5868dce3be256881e451497c0babe90939cf61f8376974d813e7de95dcfa6a2957bd477a3a3da10f044d5eb320497850f35ad5762bef98fd0a5fee8dbc3a510f1c";
+        _signatures[2] = hex"5014aea841b32dcff43d8c08d5cf1d13a5cf2b8097a2ee34950e3cc0f1e0d24004eeba47bc09bf9846bfd060b39d8ead08a537ef6e3df2f7bd8a7fcb781a605b1c";
         multisig_instance.executeOp(
-            address(erc20), 0, _data, _signatures 
+            address(erc20), 0, _data, _signatures,  MultisigOffchainBase_01.HashDataType.EIP191
         );
+         
+        // get digest for sign
         // bytes32 digest_nonce_0 = multisig_instance.txDataDigest(
         //     address(erc20), //  _erc20
         //     0,     //  _value
         //     _data,
-        //     0      //  _nonce
+        //     0,      //  _nonce
+        //     MultisigOffchainBase_01.HashDataType.EIP712
         // ); 
 
 

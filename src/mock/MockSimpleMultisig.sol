@@ -33,10 +33,11 @@ contract MockSimpleMultisig is MultisigOffchainBase_01 {
         address _target,
         uint256 _value,
         bytes memory _data,
-        bytes[] memory _signatures
+        bytes[] memory _signatures,
+        HashDataType _hashDataType
     ) public returns (bytes memory r) {
         //MultisigOffchainBase_01_Storage storage $ = _getMultisigOffchainBase_01_Storage();
-        r = _checkSignaturesAndExecute(_target, _value, _data, _signatures);
+        r = _checkSignaturesAndExecute(_target, _value, _data, _signatures, _hashDataType);
     }
 
     /**     EXAMPLE METHOD FOR IMPLEMENT IN INHERITOR
@@ -56,11 +57,12 @@ contract MockSimpleMultisig is MultisigOffchainBase_01 {
         address[] calldata _targetArray,
         uint256[] calldata _valueArray,
         bytes[] memory _dataArray,
-        bytes[][] memory _signaturesArray
+        bytes[][] memory _signaturesArray,
+        HashDataType _hashDataType
     ) external  returns (bytes[] memory r) {
         r = new bytes[](_dataArray.length);
         for (uint256 i = 0; i < _dataArray.length; ++ i){
-            r[i] =executeOp(_targetArray[i], _valueArray[i], _dataArray[i], _signaturesArray[i]);
+            r[i] =executeOp(_targetArray[i], _valueArray[i], _dataArray[i], _signaturesArray[i], _hashDataType);
         }
     }
 

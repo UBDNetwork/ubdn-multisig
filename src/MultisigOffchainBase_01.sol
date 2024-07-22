@@ -23,7 +23,9 @@ abstract contract MultisigOffchainBase_01 is
     EIP712Upgradeable
 {
     using ECDSA for bytes32;
+    using MessageHashUtils for bytes32;
 
+    enum HashDataType {EIP191, EIP712}
 
     struct TxSingCheck {
         address signer;
@@ -269,10 +271,11 @@ abstract contract MultisigOffchainBase_01 is
         address _target, 
         uint256 _value, 
         bytes memory _data, 
-        uint256 _nonce
+        uint256 _nonce,
+        HashDataType _hashDataType
     ) external view virtual returns(bytes32 digest) 
     {
-        return _txDataDigest(_target, _value, _data, _nonce);
+        return _txDataDigest(_target, _value, _data, _nonce, _hashDataType);
     }
 
     function isSignerValid(address _signer) 
@@ -315,11 +318,12 @@ abstract contract MultisigOffchainBase_01 is
         address _target,
         uint256 _value,
         bytes memory _data,
-        bytes[] memory _signatures
+        bytes[] memory _signatures,
+        HashDataType _hashDataType
     ) internal returns(bytes memory r) {
         MultisigOffchainBase_01_Storage storage $ = _getMultisigOffchainBase_01_Storage();
         require(_signatures.length <= $.cosigners.length, "Too much signatures");
-        bytes32  dgst =_txDataDigest(_target, _value, _data, $.nonce);
+        bytes32  dgst =_txDataDigest(_target, _value, _data, $.nonce, _hashDataType);
         _checkSignaturesForDigest($, dgst, _signatures);
         $.nonce ++;
         r = Address.functionCallWithValue(_target, _data, _value);
@@ -330,11 +334,17 @@ abstract contract MultisigOffchainBase_01 is
         address _target, 
         uint256 _value, 
         bytes memory _data, 
-        uint256 _nonce
+        uint256 _nonce,
+        HashDataType _hashDataType
     ) internal view returns(bytes32 digest) {
-        digest =  _hashTypedDataV4(
-            keccak256(abi.encode(_target, _value, keccak256(_data), _nonce))
-        );
+        if (_hashDataType == HashDataType.EIP191) {
+            digest = keccak256(abi.encode(_target, _value, keccak256(_data), _nonce)).toEthSignedMessageHash();    
+        } else if (_hashDataType == HashDataType.EIP712) {
+            digest =  _hashTypedDataV4(
+                keccak256(abi.encode(_target, _value, keccak256(_data), _nonce))
+            );
+        }
+        //digest = hex"6325dc374fc4b38540584fdfcf41311c72a5da66c0edd42e1481edf78ad72a60";
     }
 
     function _checkSignaturesForDigest(

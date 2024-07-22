@@ -121,12 +121,13 @@ contract DeTrustMultisigModel_01 is MultisigOffchainBase_01, FeeManager_01
         address _target,
         uint256 _value,
         bytes memory _data,
-        bytes[] memory _signatures
+        bytes[] memory _signatures,
+        HashDataType _hashDataType
     ) public  returns (bytes memory r) {
         //require(_target != address(this), "No Trust itself");
         DeTrustModelStorage_01 storage $ = _getDeTrustModel_01_ExecutiveStorage();
         _chargeFee(0);
-        r = _checkSignaturesAndExecute(_target, _value, _data, _signatures);
+        r = _checkSignaturesAndExecute(_target, _value, _data, _signatures, _hashDataType);
         _updateLastOwnerOp($);
     }
 
@@ -147,14 +148,15 @@ contract DeTrustMultisigModel_01 is MultisigOffchainBase_01, FeeManager_01
         address[] calldata _targetArray,
         uint256[] calldata _valueArray,
         bytes[] memory _dataArray,
-        bytes[][] memory _signaturesArray
+        bytes[][] memory _signaturesArray,
+        HashDataType _hashDataType
     ) external  returns (bytes[] memory r) {
         DeTrustModelStorage_01 storage $ = _getDeTrustModel_01_ExecutiveStorage();
         _chargeFee(0);
         _updateLastOwnerOp($);
         r = new bytes[](_dataArray.length);
         for (uint256 i = 0; i < _dataArray.length; ++ i){
-            r[i] =executeOp(_targetArray[i], _valueArray[i], _dataArray[i], _signaturesArray[i]);
+            r[i] =executeOp(_targetArray[i], _valueArray[i], _dataArray[i], _signaturesArray[i], _hashDataType);
         }
         _updateLastOwnerOp($);
     }
