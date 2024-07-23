@@ -38,7 +38,7 @@ import {MultisigOffchainBase_01} from "../src/MultisigOffchainBase_01.sol";
 // Signature: 
 //            
 // 191        0x5014aea841b32dcff43d8c08d5cf1d13a5cf2b8097a2ee34950e3cc0f1e0d24004eeba47bc09bf9846bfd060b39d8ead08a537ef6e3df2f7bd8a7fcb781a605b1c
-contract FactoryTest_m_01 is Test {
+contract OffChainFlowTest_m_01 is Test {
     address public constant addr1 = 0x7EC0BF0a4D535Ea220c6bD961e352B752906D568;
     address public constant addr2 = 0x4b664eD07D19d0b192A037Cfb331644cA536029d;
     address public constant addr3 = 0xd7DE4B1214bFfd5C3E9Fb8A501D1a7bF18569882;
