@@ -5,7 +5,7 @@ pragma solidity 0.8.26;
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {ContextUpgradeable, Initializable} from "@Uopenzeppelin/contracts/utils/ContextUpgradeable.sol";
 import "@Uopenzeppelin/contracts/utils/cryptography/EIP712Upgradeable.sol"; 
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol"; 
+ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol"; 
 
 /**
  * @dev This is abstract contract with ONCHAIN multisig wallet functions
@@ -19,29 +19,31 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
  */
 abstract contract MultisigOnchainBase_01 is 
     Initializable, 
-    ContextUpgradeable,
-    EIP712Upgradeable
+    ContextUpgradeable
 {
-    using ECDSA for bytes32;
-    using MessageHashUtils for bytes32;
 
-    enum HashDataType {EIP191, EIP712}
+    enum TxStatus {WaitingForSigners, Executed, Rejected}
 
-    struct TxSingCheck {
-        address signer;
-        bool isValid;
-        bool signOK;
-    }
 
     struct Signer {
         address signer;
         uint64 validFrom;
     }
+
+    struct Operation {
+        address target;
+        uint256 value;
+        bytes metaTx;
+        address[] signedBy;
+        TxStatus status;
+
+    }
     /// @custom:storage-location erc7201:ubdn.storage.MultisigOnchainBase_01_Storage
     struct MultisigOnchainBase_01_Storage {
-        uint256 nonce;
         uint8 threshold;
         Signer[] cosigners;
+        Operation[] ops;
+
     }
 
     uint8  public constant MAX_COSIGNERS_NUMBER = 100; // Including creator
@@ -53,8 +55,16 @@ abstract contract MultisigOnchainBase_01 is
      * @dev The caller account is not authorized to perform an operation.
      */
     //error OwnableUnauthorizedAccount(address account);
+    error ActionDeniedForThisStatus(TxStatus status);
     error NeedMoreValidSignatures(uint8 needMore);
     error CoSignerAlreadyExist(address signer);
+    error CoSignerNotValid(address signer);
+    error CoSignerNotExist(address signer);
+
+    event SignatureAdded(uint256 indexed nonce, address signer, uint256 totalSignaturesCollected);
+    event SignatureRevoked(uint256 indexed nonce, address signer, uint256 totalSignaturesCollected);
+    event TxExecuted(uint256 indexed nonce, address sender);
+    event TxRejected(uint256 indexed nonce, address sender);
 
     /**
      * @dev Throws if called by any account other than this contract or proxy
@@ -126,7 +136,7 @@ abstract contract MultisigOnchainBase_01 is
      * @dev Storage Getter for access contract state
      */
     function _getMultisigOnchainBase_01_Storage() 
-        internal pure returns (MultisigOnchainBase_01_Storage storage $) 
+        private pure returns (MultisigOnchainBase_01_Storage storage $) 
     {
         assembly {
             $.slot := MultisigOnchainBase_01_StorageLocation
@@ -193,47 +203,65 @@ abstract contract MultisigOnchainBase_01 is
         $.cosigners.pop();
     }
     
-
-    /**   EXAMPLE METHOD FOR IMPLEMENT IN INHERITOR
-     * @dev Use this method for interact any dApps onchain
+    /**  
+     * @dev Use this method for save metaTx and make first signature onchain
      * @param _target address of dApp smart contract
      * @param _value amount of native token in tx(msg.value)
      * @param _data ABI encoded transaction payload
      */
-    // function executeOp(
-    //     address _target,
-    //     uint256 _value,
-    //     bytes memory _data,
-    //     bytes[] memory _signatures
-    // ) public returns (bytes memory r) {
-    //     MultisigOnchainBase_01_Storage storage $ = _getMultisigOnchainBase_01_Storage();
-    //     r = _checkSignaturesAndExecute($, _target, _value, _data, _signatures);
-    // }
+    function createAndSign(
+        address _target,
+        uint256 _value,
+        bytes memory _data
+    ) 
+        public
+        returns(uint256 nonce_)
+    {
+        nonce_ = _createOp(_target, _value, _data);
+    } 
 
-    /**     EXAMPLE METHOD FOR IMPLEMENT IN INHERITOR
-     * @dev Use this method for interact any dApps onchain, executing as one batch
-     * @param _targetArray addressed of dApp smart contract
-     * @param _valueArray amount of native token in every tx(msg.value)
-     * @param _dataArray ABI encoded transaction payloads
-     * 
-     * @param _signaturesArray array if signatures array for each tx
-     * https://docs.soliditylang.org/en/develop/types.html#arrays
-     * For example, if you have a variable uint[][5] memory x, you access the seventh 
-     * uint in the third dynamic array using x[2][6], and to access the third dynamic 
-     * array, use x[2]. Again, if you have an array T[5] a for a type T that can also 
-     * be an array, then a[2] always has type T.
+    /**  
+     * @dev Use this method for sign metaTx onchain and execute as well
+     * @param _nonce index of saved Meta Tx
+     * @param _execWhenReady if true then tx will be executed if all signatures are collected
      */
-    // function executeMultiOp(
-    //     address[] calldata _targetArray,
-    //     uint256[] calldata _valueArray,
-    //     bytes[] memory _dataArray,
-    //     bytes[][] memory _signaturesArray
-    // ) external  returns (bytes[] memory r) {
-    //     r = new bytes[](_dataArray.length);
-    //     for (uint256 i = 0; i < _dataArray.length; ++ i){
-    //         r[i] =executeOp(_targetArray[i], _valueArray[i], _dataArray[i], _signaturesArray[i]);
-    //     }
-    // }
+    function signAndExecute(uint256 _nonce, bool _execWhenReady) 
+        public 
+        returns(uint256 signedByCount) 
+    {
+        signedByCount = _signMetaTx(_nonce,_execWhenReady);
+    }
+
+    /**  
+     * @dev Use this method for  execute tx
+     * @param _nonce index of saved Meta Tx
+     */
+    function executeOp(uint256 _nonce) public returns(bytes memory r){
+        r = _execTx(_nonce);
+    }
+
+    /**  
+     * @dev Use this method for  revoke signature onchain and reject as well
+     * @param _nonce index of saved Meta Tx
+     * @param _rejectWhenReady if true then tx will be rejected if all signatures revoked
+     */
+    function revokeSignature(uint256 _nonce, bool _rejectWhenReady) 
+        public 
+        returns(uint256 signedByCount) 
+    {
+        signedByCount = _revokeSignature(_nonce, _msgSender(), _rejectWhenReady);
+
+    }
+
+    /**  
+     * @dev Use this method for  reject tx
+     * @param _nonce index of saved Meta Tx
+     */
+    function rejectTx(uint256 _nonce) public {
+        _rejectTx(_nonce);
+    }
+    
+    
     ///////////////////////////////////////////////////////////////////////////
     /**
      * @dev Use this method for static call any dApps onchain
@@ -259,146 +287,157 @@ abstract contract MultisigOnchainBase_01 is
     function getMultisigOnchainBase_01() 
         public 
         pure
-        virtual 
         returns(MultisigOnchainBase_01_Storage memory msig)
     {
         msig = _getMultisigOnchainBase_01_Storage();
     }
 
-   
-
-    function txDataDigest(
-        address _target, 
-        uint256 _value, 
-        bytes memory _data, 
-        uint256 _nonce,
-        HashDataType _hashDataType
-    ) external view virtual returns(bytes32 digest) 
-    {
-        return _txDataDigest(_target, _value, _data, _nonce, _hashDataType);
-    }
-
-    function isSignerValid(address _signer) 
-        public 
-        view 
-        returns(bool isValid, uint256 validFrom_) 
-    {
-        MultisigOnchainBase_01_Storage memory $ = _getMultisigOnchainBase_01_Storage();
-        // TODO tru optomize GAS
-        for (uint256 i = 0; i < $.cosigners.length; ++ i) {
-            if ($.cosigners[i].signer == _signer) {
-                isValid = _isValidSignerRecord($.cosigners, i);
-                validFrom_ = $.cosigners[i].validFrom;
-                break;
-            }
-        }
-
-    }
-    ////////////////////////////////////////////////////////////////////////
-    // TODO  Remove
-    function _isSignerInList(MultisigOnchainBase_01_Storage storage st) internal view virtual
-        returns(bool r, uint256 validFrom_)
-    {
-        for (uint256 i = 0; i < st.cosigners.length; ++ i) {
-            if (st.cosigners[i].signer == _msgSender()) {
-                r = true;
-                validFrom_ = uint256(st.cosigners[i].validFrom);
-                break;
-            }
-        }
-    }
-
-
-
     ////////////////////////////////////////////
     ///////   Multisig internal functions    ///
     ////////////////////////////////////////////
-    function _checkSignaturesAndExecute(
-        //MultisigOnchainBase_01_Storage storage st,
+    function _createOp(
         address _target,
         uint256 _value,
-        bytes memory _data,
-        bytes[] memory _signatures,
-        HashDataType _hashDataType
-    ) internal returns(bytes memory r) {
-        MultisigOnchainBase_01_Storage storage $ = _getMultisigOnchainBase_01_Storage();
-        require(_signatures.length <= $.cosigners.length, "Too much signatures");
-        bytes32  dgst =_txDataDigest(_target, _value, _data, $.nonce, _hashDataType);
-        _checkSignaturesForDigest($, dgst, _signatures);
-        $.nonce ++;
-        r = Address.functionCallWithValue(_target, _data, _value);
-    }
-    
-    
-    function _txDataDigest(
-        address _target, 
-        uint256 _value, 
-        bytes memory _data, 
-        uint256 _nonce,
-        HashDataType _hashDataType
-    ) internal view returns(bytes32 digest) {
-        if (_hashDataType == HashDataType.EIP191) {
-            digest = keccak256(abi.encode(_target, _value, keccak256(_data), _nonce)).toEthSignedMessageHash();    
-        } else if (_hashDataType == HashDataType.EIP712) {
-            digest =  _hashTypedDataV4(
-                keccak256(abi.encode(_target, _value, keccak256(_data), _nonce))
-            );
-        }
-        //digest = hex"6325dc374fc4b38540584fdfcf41311c72a5da66c0edd42e1481edf78ad72a60";
-    }
-
-    function _checkSignaturesForDigest(
-        MultisigOnchainBase_01_Storage storage st,
-        bytes32 _digest, 
-        bytes[] memory _signatures
-    ) internal  returns(bool ok)
+        bytes memory _data
+    )
+        internal
+        returns(uint256 nonce_)
     {
-        TxSingCheck[] memory checkList = new TxSingCheck[](st.cosigners.length);
-        // Fill cheklist with signers data for safe gas. Becuase we need compare 
-        // all signatures with all records.
-        for (uint256 i = 0; i < checkList.length; ++ i){
-            checkList[i].signer = st.cosigners[i].signer;
-            // !!!! Main signer validity rule  is here
-            checkList[i].isValid = _isValidSignerRecord(st.cosigners, i);
+        require(_target != address(0), "No Zero Address");
+        MultisigOnchainBase_01_Storage storage $ = _getMultisigOnchainBase_01_Storage();
+        Operation storage op = $.ops.push();
+        op.target = _target;
+        op.value = _value;
+        op.metaTx = _data;
+        nonce_ = $.ops.length;
+        Signer[] memory _sgnrs = $.cosigners;
+        _checkSigner(_msgSender(), _sgnrs);
+        _signMetaTxOp(op, _msgSender());
+        emit SignatureAdded(nonce_, _msgSender(), 1);
+    }
+
+    function _signMetaTxOp(
+         Operation storage _op, 
+        address _signer
+    ) 
+        internal
+        returns (uint256 signedByCount) 
+    {
+        // Check that not signed before
+        for (uint256 i; i < _op.signedBy.length; ++ i) {
+            if (_op.signedBy[i] == _signer) {
+                revert CoSignerAlreadyExist(_signer);
+            }
         }
-        uint8 thresholdCounter = st.threshold;
+        _op.signedBy.push(_signer);
+        signedByCount = _op.signedBy.length; 
+    }
 
-        for (uint256 i = 0; i < _signatures.length; ++ i) {
-            // recover signer address
-            address signedBy = _digest.recover(_signatures[i]); 
-            for (uint256 j = 0; j < checkList.length; ++ j) {
-                if (
-                    // record with exact signer
-                    checkList[i].signer == signedBy
+    function _signMetaTx(uint256 _nonce, bool _execWhenReady) 
+        internal
+        returns (uint256 signedByCount) 
+    {
+        MultisigOnchainBase_01_Storage storage $ = _getMultisigOnchainBase_01_Storage();
+        signedByCount = _signMetaTxOp($.ops[_nonce], _msgSender());
+        emit SignatureAdded(_nonce, _msgSender(), signedByCount);
+        if (_execWhenReady &&  signedByCount == $.threshold){
+            _execOp($.ops[_nonce]);
+            emit TxExecuted(_nonce, _msgSender());
+        }
 
-                    // no double signs with one saddress
-                    && !checkList[i].signOK  
+    }
 
-                    // signer is valid to sign tx
-                    && checkList[i].isValid
-                ) 
-                {
-                    checkList[i].signOK = true;
-                    thresholdCounter --;
-                    _hookValidSiner(j,checkList[i].signer, i, thresholdCounter);
-                    break;
+    function _execTx(uint256 _nonce) internal returns(bytes memory r) {
+        MultisigOnchainBase_01_Storage storage $ = _getMultisigOnchainBase_01_Storage();
+        r =  _execOp($.ops[_nonce]);
+        emit TxExecuted(_nonce, _msgSender());
+    }
+    function _execOp(Operation storage _op) 
+        internal 
+        returns(bytes memory r)
+    {
+        MultisigOnchainBase_01_Storage storage $ = _getMultisigOnchainBase_01_Storage();
+        if (
+               _op.status == TxStatus.WaitingForSigners 
+               && _op.signedBy.length == $.threshold
+        ) 
+        {
+            r = Address.functionCallWithValue(
+                _op.target, 
+                _op.metaTx, 
+                _op.value
+            );   
+        }
+        _op.status = TxStatus.Executed;
+    }
+
+    function _rejectTx(uint256 _nonce) internal {
+        MultisigOnchainBase_01_Storage storage $ = _getMultisigOnchainBase_01_Storage();
+        _rejectOp($.ops[_nonce]);
+        emit TxRejected(_nonce, _msgSender());
+    }
+
+    function _rejectOp(Operation storage _op) internal {
+        if (_op.status == TxStatus.WaitingForSigners  && _op.signedBy.length == 0){
+            _op.status = TxStatus.Rejected;
+        } else {
+            revert ActionDeniedForThisStatus(_op.status);
+        }
+
+    }
+    function _revokeSignature(uint256 _nonce, address _signer, bool _rejectWhenReady) 
+        internal
+        returns(uint256 signedByCount)
+    {
+        MultisigOnchainBase_01_Storage storage $ = _getMultisigOnchainBase_01_Storage();
+        // TODO GAS saving
+        if ($.ops[_nonce].status == TxStatus.WaitingForSigners){
+            for(uint256 i = 0; i < $.ops[_nonce].signedBy.length; ++ i){
+                if ($.ops[_nonce].signedBy[i] == _signer) {
+                    if (i != $.ops[_nonce].signedBy.length -1){
+                        $.ops[_nonce].signedBy[i] = $.ops[_nonce].signedBy[$.ops[_nonce].signedBy.length -1];
+                    }
+                    $.ops[_nonce].signedBy.pop();
+                } 
+            }
+        } else {
+            revert ActionDeniedForThisStatus($.ops[_nonce].status);
+        }
+        
+        signedByCount = $.ops[_nonce].signedBy.length;
+        emit SignatureRevoked(_nonce, _signer, signedByCount);
+
+        if (_rejectWhenReady && signedByCount == 0) {
+            _rejectOp($.ops[_nonce]);
+            emit TxRejected(_nonce, _msgSender());
+        }
+    }
+
+    function _checkSigner(
+        address _signer, 
+        Signer[] memory _cosigners
+    ) 
+       internal 
+       view
+    {
+        for (uint256 i = 0; i < _cosigners.length; ++ i) {
+            if (_cosigners[i].signer == _signer) {
+                // Use this hook for ability to change logic in inheritors
+                if (_isValidSignerRecord(_cosigners[i])){
+                    return;
+                } else {
+                    revert CoSignerNotValid(_signer);
                 }
             }
-            if (thresholdCounter == 0) {
-                ok = true;
-                break; 
-            }     
         }
-        if (!ok) {
-            // Error not enough valid signatures
-            revert NeedMoreValidSignatures(thresholdCounter);
-        }
+        revert CoSignerNotExist(_signer);
     }
+
+  
 
     function _isValidSignerRecord(
         //MultisigOnchainBase_01_Storage storage st, 
-        Signer[] memory _cosigners,
-        uint256 _signerIndex
+        Signer memory _cosigner
     )
         internal
         virtual
@@ -406,15 +445,7 @@ abstract contract MultisigOnchainBase_01 is
         returns(bool valid)
     {
         // !!!! Main signer validity rule  is here
-        //valid = st.silenceTime[_signerIndex] + st.lastOwnerOp <= block.timestamp;
-        valid = _cosigners[_signerIndex].validFrom <= block.timestamp;
+        valid = _cosigner.validFrom <= block.timestamp;
     } 
 
-    // For use in inheritors code  
-    function _hookValidSiner(
-        uint256 _signerIndex,
-        address _signerAddress,
-        uint256 _signatureIndex, 
-        uint8   _thresholdCounter
-    ) internal virtual {}
 }
