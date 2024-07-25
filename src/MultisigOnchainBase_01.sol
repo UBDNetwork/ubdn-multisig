@@ -125,6 +125,7 @@ abstract contract MultisigOnchainBase_01 is
         require(_cosignersAddresses.length <= MAX_COSIGNERS_NUMBER, "Too much inheritors");
         require(_cosignersAddresses.length == _validFrom.length, "Arrays must be equal");
         require(_threshold <= _cosignersAddresses.length, "Not greater then signers count");
+        // TODO checl minimum one signature
         MultisigOnchainBase_01_Storage storage $ = _getMultisigOnchainBase_01_Storage();
         $.threshold = _threshold;
         for (uint8 i; i < _cosignersAddresses.length; ++ i) {
@@ -195,6 +196,7 @@ abstract contract MultisigOnchainBase_01 is
         // decrease count for succesfull tx (GAS SAFE)
         signersCount = uint8($.cosigners.length - 1);
         require(signersCount >= $.threshold, "New Signers count less then threshold");
+        // TODO deny removing of owner
 
         // if deleting index is not last array element then need to replace it with last
         if (_signerIndex != signersCount + 1) {
@@ -309,7 +311,7 @@ abstract contract MultisigOnchainBase_01 is
         op.target = _target;
         op.value = _value;
         op.metaTx = _data;
-        nonce_ = $.ops.length;
+        nonce_ = $.ops.length -1;
         Signer[] memory _sgnrs = $.cosigners;
         _checkSigner(_msgSender(), _sgnrs);
         _signMetaTxOp(op, _msgSender());
