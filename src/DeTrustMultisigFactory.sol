@@ -88,8 +88,9 @@ contract DeTrustMultisigFactory {
 
         // INIT
         bytes memory initCallData = abi.encodeWithSignature(
-            "initialize(uint8,address[],uint64[])",
+            "initialize(uint8,address[],uint64[],address,uint256,address,uint64)",
             _threshold, _inheritors, _periodOrDateArray
+            ,feep.feeToken, feep.feeAmount, feep.feeBeneficiary, feep.prePaiedPeriod
         );
         Address.functionCallWithValue(proxy, initCallData, msg.value);
 

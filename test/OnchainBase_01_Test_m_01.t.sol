@@ -84,6 +84,7 @@ contract OnchainBase_01_Test is Test {
         );
        
         MockMultisigOnchainBase_01 multisig_instance = MockMultisigOnchainBase_01(proxy);
+        // Create op
         vm.startPrank(addr1);
         uint256 lastNonce =  multisig_instance.createAndSign(address(erc20), 0, _data);
         vm.stopPrank();
@@ -91,11 +92,13 @@ contract OnchainBase_01_Test is Test {
         assertEq(info.ops.length, lastNonce + 1);
         assertEq(info.ops[0].metaTx, _data);
 
+        // Second signature
         vm.startPrank(addr2);
         uint256 signCount = multisig_instance.signAndExecute(lastNonce, false);
         vm.stopPrank(); 
         assertEq(signCount, info.threshold);
 
+        // Execute
         multisig_instance.executeOp(lastNonce);    
         assertEq(erc20.balanceOf(addr1), sendERC20Amount/2);
     }

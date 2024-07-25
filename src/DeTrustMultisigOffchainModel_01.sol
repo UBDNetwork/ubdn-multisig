@@ -15,7 +15,7 @@ import "./FeeManager_01.sol";
  * 
  * !!! This is implementation contract for proxy conatract creation
  */
-contract DeTrustMultisigModel_01 is MultisigOffchainBase_01, FeeManager_01
+contract DeTrustMultisigOffchainModel_01 is MultisigOffchainBase_01, FeeManager_01
 
 {
     

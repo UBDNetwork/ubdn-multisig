@@ -5,7 +5,7 @@ import {Test, console2} from "forge-std/Test.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
 import {DeTrustMultisigFactory} from "../src/DeTrustMultisigFactory.sol";
-import {DeTrustMultisigModel_01} from "../src/DeTrustMultisigModel_01.sol";
+import {DeTrustMultisigOffchainModel_01} from "../src/DeTrustMultisigOffchainModel_01.sol";
 import {MockERC20} from "../src/mock/MockERC20.sol";
 
 import {MultisigOffchainBase_01} from "../src/MultisigOffchainBase_01.sol";
@@ -47,7 +47,7 @@ contract OffChainFlowTest_m_01 is Test {
     string public detrustName = 'NameOfDeTrust';
     address payable public  proxy;
     DeTrustMultisigFactory  public factory;
-    DeTrustMultisigModel_01 public impl_00;
+    DeTrustMultisigOffchainModel_01 public impl_00;
     //eTrustModel_00 public payable impl_00_instance;
     bytes32 _digest_transfer = 0xa42d2b80860bfa2bba37a9d48246f4f2a9f02fbdeeb9b291788dbfe16da6912e;
 
@@ -58,7 +58,7 @@ contract OffChainFlowTest_m_01 is Test {
     receive() external payable virtual {}
     function setUp() public {
         factory = new DeTrustMultisigFactory(address(0), address(0));
-        impl_00 = new DeTrustMultisigModel_01();
+        impl_00 = new DeTrustMultisigOffchainModel_01();
         erc20 = new MockERC20('Mock ERC20 Token', 'MOCK');
         // address _implAddress, 
         // uint8 _threshold,
@@ -105,7 +105,7 @@ contract OffChainFlowTest_m_01 is Test {
             address(this), sendERC20Amount/2
         );
        
-        DeTrustMultisigModel_01 multisig_instance = DeTrustMultisigModel_01(proxy);
+        DeTrustMultisigOffchainModel_01 multisig_instance = DeTrustMultisigOffchainModel_01(proxy);
         bytes[] memory _signatures = new bytes[](3);
         _signatures[0] = hex"b7778cfa573b0b7db5f017ed3191c29c9b2b9e29e75da895b40efa9438228a217ce172b716dc3ecc42400a622c73029478757555250f5df0f4b7cf70c6fe9f961c";
         _signatures[1] = hex"5868dce3be256881e451497c0babe90939cf61f8376974d813e7de95dcfa6a2957bd477a3a3da10f044d5eb320497850f35ad5762bef98fd0a5fee8dbc3a510f1c";
