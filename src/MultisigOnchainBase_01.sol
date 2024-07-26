@@ -264,6 +264,17 @@ abstract contract MultisigOnchainBase_01 is
     }
 
     /**  
+     * @dev Use this method for  execute batch of well signed tx
+     * @param _nonces index of saved Meta Tx
+     */
+    function executeOp(uint256[] memory _nonces) public returns(bytes memory r){
+        for (uint256 i = 0; i < _nonces.length; ++ i){
+            r = _execTx(_nonces[i]);
+        }
+        _hookCheckSender(_msgSender());
+    }
+
+    /**  
      * @dev Use this method for  revoke signature onchain and reject as well
      * @param _nonce index of saved Meta Tx
      * @param _rejectWhenReady if true then tx will be rejected if all signatures revoked

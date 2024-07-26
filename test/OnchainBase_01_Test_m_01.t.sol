@@ -8,8 +8,6 @@ import {DeTrustMultisigFactory} from "../src/DeTrustMultisigFactory.sol";
 import {MockMultisigOnchainBase_01} from "../src/mock/MockMultisigOnchainBase_01.sol";
 import {MockERC20} from "../src/mock/MockERC20.sol";
 
-//import {MultisigOffchainBase_01} from "../src/MultisigOffchainBase_01.sol";
-//import {ITrustModel_00} from "../src/interfaces/ITrustModel_00.sol";
 
 // Address:     0x7EC0BF0a4D535Ea220c6bD961e352B752906D568
 // Private key: 0x1bbde125e133d7b485f332b8125b891ea2fbb6a957e758db72e6539d46e2cd71
@@ -20,10 +18,14 @@ import {MockERC20} from "../src/mock/MockERC20.sol";
 // Address:     0xd7DE4B1214bFfd5C3E9Fb8A501D1a7bF18569882
 // Private key: 0x8ba574046f1e9e372e805aa6c5dcf5598830df5a78605b7713bf00f2f3329148
 
+// Address:     0x6F9aaAaD96180b3D6c71Fbbae2C1c5d5193A64EC
+// Private key: 0xae8fe3985898986377b19cc6bdbb76723470552e95e4d028d2dae2691ab9c65d
+
 contract OnchainBase_01_Test is Test {
     address public constant addr1 = 0x7EC0BF0a4D535Ea220c6bD961e352B752906D568;
     address public constant addr2 = 0x4b664eD07D19d0b192A037Cfb331644cA536029d;
     address public constant addr3 = 0xd7DE4B1214bFfd5C3E9Fb8A501D1a7bF18569882;
+    address public constant addr4 = 0x6F9aaAaD96180b3D6c71Fbbae2C1c5d5193A64EC;
     uint256 public sendEtherAmount = 1e18;
     uint256 public sendERC20Amount = 2e18;
     string public detrustName = 'NameOfDeTrust';
@@ -101,5 +103,33 @@ contract OnchainBase_01_Test is Test {
         // Execute
         multisig_instance.executeOp(lastNonce);    
         assertEq(erc20.balanceOf(addr1), sendERC20Amount/2);
+    }
+
+    function test_addSigner_FailAndOK() public {
+        bytes memory _data = abi.encodeWithSignature(
+            "addSigner(address,uint64)",
+            addr4, block.timestamp
+        );
+       
+        MockMultisigOnchainBase_01 multisig_instance = MockMultisigOnchainBase_01(proxy);
+        vm.expectRevert("Only Self Signed");
+        multisig_instance.addSigner(addr4, uint64(block.timestamp));
+
+        vm.startPrank(addr1);
+        uint256 lastNonce =  multisig_instance.createAndSign(address(multisig_instance), 0, _data);
+        vm.stopPrank();
+
+        // Second signature
+        vm.startPrank(addr2);
+        uint256 signCount = multisig_instance.signAndExecute(lastNonce, false);
+        vm.stopPrank(); 
+       
+
+        // Execute
+        multisig_instance.executeOp(lastNonce); 
+
+        MockMultisigOnchainBase_01.MultisigOnchainBase_01_Storage memory info 
+            = multisig_instance.getMultisigOnchainBase_01();   
+        assertEq(4, info.cosigners.length);
     }
 }
