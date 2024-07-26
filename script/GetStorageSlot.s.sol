@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.21;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+//import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+//import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {Script} from "forge-std/Script.sol";
 import {Test, console2} from "forge-std/Test.sol";
 import "../lib/forge-std/src/StdJson.sol";
@@ -20,7 +20,7 @@ contract GetStorageSlot is Script {
         number = num;
     }
 
-    function run() public {
+    function run() public view{
         //console2.log("Chain id: %s", vm.toString(block.chainid));
         console2.log("Deployer address: %s, native balnce %s", msg.sender, msg.sender.balance);
         console2.log("ubdn.storage.MultisigOnchainBase_01_Storage \n %s \n", vm.toString(
@@ -33,6 +33,10 @@ contract GetStorageSlot is Script {
 
         console2.log("ubdn.storage.MultisigOffchainBase_01_Storage \n %s \n", vm.toString(
             keccak256(abi.encode(uint256(keccak256("ubdn.storage.MultisigOffchainBase_01_Storage")) - 1)) & ~bytes32(uint256(0xff))
+        ));
+
+        console2.log("ubdn.storage.DeTrustMultisigOnchainModel_01_Storage \n %s \n", vm.toString(
+            keccak256(abi.encode(uint256(keccak256("ubdn.storage.DeTrustMultisigOnchainModel_01_Storage")) - 1)) & ~bytes32(uint256(0xff))
         ));
     }
     

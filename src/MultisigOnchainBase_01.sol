@@ -102,8 +102,8 @@ abstract contract MultisigOnchainBase_01 is
 
     function __MultisigOnchainBase_01_init(
         uint8 _threshold,
-        address[] calldata _cosignersAddresses,
-        uint64[] calldata  _validFrom
+        address[] memory _cosignersAddresses,
+        uint64[] memory  _validFrom
     ) internal onlyInitializing 
     {
         __MultisigOnchainBase_01_init_unchained(
@@ -117,8 +117,8 @@ abstract contract MultisigOnchainBase_01 is
      */
     function __MultisigOnchainBase_01_init_unchained(
         uint8 _threshold,
-        address[] calldata _cosignersAddresses,
-        uint64[] calldata  _validFrom
+        address[] memory _cosignersAddresses,
+        uint64[] memory  _validFrom
         
     ) internal onlyInitializing 
     {
@@ -127,7 +127,7 @@ abstract contract MultisigOnchainBase_01 is
         require(_threshold <= _cosignersAddresses.length, "Not greater then signers count");
         require(_cosignersAddresses.length > 1, "At least one signer");
         require(_threshold > 0 , "No zero threshold");
-        
+
         MultisigOnchainBase_01_Storage storage $ = _getMultisigOnchainBase_01_Storage();
         $.threshold = _threshold;
         for (uint8 i; i < _cosignersAddresses.length; ++ i) {
@@ -238,6 +238,7 @@ abstract contract MultisigOnchainBase_01 is
         returns(uint256 nonce_)
     {
         nonce_ = _createOp(_target, _value, _data);
+        _hookCheckSender(_msgSender());
     } 
 
     /**  
@@ -250,6 +251,7 @@ abstract contract MultisigOnchainBase_01 is
         returns(uint256 signedByCount) 
     {
         signedByCount = _signMetaTx(_nonce,_execWhenReady);
+        _hookCheckSender(_msgSender());
     }
 
     /**  
@@ -258,6 +260,7 @@ abstract contract MultisigOnchainBase_01 is
      */
     function executeOp(uint256 _nonce) public returns(bytes memory r){
         r = _execTx(_nonce);
+        _hookCheckSender(_msgSender());
     }
 
     /**  
@@ -270,7 +273,7 @@ abstract contract MultisigOnchainBase_01 is
         returns(uint256 signedByCount) 
     {
         signedByCount = _revokeSignature(_nonce, _msgSender(), _rejectWhenReady);
-
+        _hookCheckSender(_msgSender());
     }
 
     /**  
@@ -279,6 +282,7 @@ abstract contract MultisigOnchainBase_01 is
      */
     function rejectTx(uint256 _nonce) public {
         _rejectTx(_nonce);
+        _hookCheckSender(_msgSender());
     }
     
     
@@ -467,5 +471,9 @@ abstract contract MultisigOnchainBase_01 is
         // !!!! Main signer validity rule  is here
         valid = _cosigner.validFrom <= block.timestamp;
     } 
+
+    function _hookCheckSender(address _sender) internal virtual {
+        _sender;
+    }
 
 }
