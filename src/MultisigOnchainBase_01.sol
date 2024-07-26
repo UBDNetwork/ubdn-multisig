@@ -125,7 +125,9 @@ abstract contract MultisigOnchainBase_01 is
         require(_cosignersAddresses.length <= MAX_COSIGNERS_NUMBER, "Too much inheritors");
         require(_cosignersAddresses.length == _validFrom.length, "Arrays must be equal");
         require(_threshold <= _cosignersAddresses.length, "Not greater then signers count");
-        // TODO checl minimum one signature
+        require(_cosignersAddresses.length > 1, "At least one signer");
+        require(_threshold > 0 , "No zero threshold");
+        
         MultisigOnchainBase_01_Storage storage $ = _getMultisigOnchainBase_01_Storage();
         $.threshold = _threshold;
         for (uint8 i; i < _cosignersAddresses.length; ++ i) {
@@ -181,6 +183,22 @@ abstract contract MultisigOnchainBase_01 is
         $.cosigners.push(Signer(_newSigner, _newPeriod));
     }
 
+    function editSignerDate(address _coSigner, uint64 _newPeriod) 
+        public 
+        virtual
+        onlySelfSender
+    {
+        MultisigOnchainBase_01_Storage storage $ = _getMultisigOnchainBase_01_Storage();
+        
+        // check no double
+        for (uint256 i = 0; i < $.cosigners.length - 1; ++ i) {
+            if ($.cosigners[i].signer == _coSigner) {
+                require(i != 0, "Cant edit owner's period");
+                $.cosigners[i].validFrom = _newPeriod;
+            }
+        }
+    }
+
 
     
     /**
@@ -196,7 +214,7 @@ abstract contract MultisigOnchainBase_01 is
         // decrease count for succesfull tx (GAS SAFE)
         signersCount = uint8($.cosigners.length - 1);
         require(signersCount >= $.threshold, "New Signers count less then threshold");
-        // TODO deny removing of owner
+        require(_signerIndex == 0, "Cant remove multisig owner(creator)");
 
         // if deleting index is not last array element then need to replace it with last
         if (_signerIndex != signersCount + 1) {

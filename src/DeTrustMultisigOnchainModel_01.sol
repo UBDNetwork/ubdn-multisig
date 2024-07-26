@@ -12,7 +12,7 @@ import "./FeeManager_01.sol";
  * 
  * !!! This is implementation contract for proxy conatract creation
  */
-contract DeTrustMultisigOnchainModel_00 is MultisigOnchainBase_01, FeeManager_01 {
+contract DeTrustMultisigOnchainModel_01 is MultisigOnchainBase_01, FeeManager_01 {
 
     /////////////////////////////////////////////////////
     /// OpenZepelin Pattern for Proxy initialize      ///
