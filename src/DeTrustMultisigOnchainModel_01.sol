@@ -99,7 +99,7 @@ contract DeTrustMultisigOnchainModel_01 is MultisigOnchainBase_01, FeeManager_01
     
     // Check ability to sign
     function _isValidSignerRecord(
-        Signer memory _cosigner
+        Signer storage _cosigner
     )
         internal
         override

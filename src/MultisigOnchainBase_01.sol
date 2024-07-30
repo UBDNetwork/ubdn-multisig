@@ -327,6 +327,25 @@ abstract contract MultisigOnchainBase_01 is
         msig = _getMultisigOnchainBase_01_Storage();
     }
 
+
+    function getMultisigSettings() 
+        public 
+        view 
+        returns(uint8 thr, Signer[] memory sgs)
+    {
+        MultisigOnchainBase_01_Storage storage $ = _getMultisigOnchainBase_01_Storage();
+        thr = $.threshold;
+        sgs = $.cosigners;
+    }
+
+    function getMultisigOpByNonce(uint256 _nonce)  
+        public 
+        view 
+        returns(Operation memory op)
+    {
+        MultisigOnchainBase_01_Storage storage $ = _getMultisigOnchainBase_01_Storage();
+        op = $.ops[_nonce];
+    } 
     ////////////////////////////////////////////
     ///////   Multisig internal functions    ///
     ////////////////////////////////////////////
@@ -345,7 +364,7 @@ abstract contract MultisigOnchainBase_01 is
         op.value = _value;
         op.metaTx = _data;
         nonce_ = $.ops.length -1;
-        Signer[] memory _sgnrs = $.cosigners;
+        Signer[] storage _sgnrs = $.cosigners;
         _checkSigner(_msgSender(), _sgnrs);
         _signMetaTxOp(op, _msgSender());
         emit SignatureAdded(nonce_, _msgSender(), 1);
@@ -450,7 +469,7 @@ abstract contract MultisigOnchainBase_01 is
 
     function _checkSigner(
         address _signer, 
-        Signer[] memory _cosigners
+        Signer[] storage _cosigners
     ) 
        internal 
        view
@@ -472,7 +491,7 @@ abstract contract MultisigOnchainBase_01 is
 
     function _isValidSignerRecord(
         //MultisigOnchainBase_01_Storage storage st, 
-        Signer memory _cosigner
+        Signer storage _cosigner
     )
         internal
         virtual
