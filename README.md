@@ -20,11 +20,6 @@ $ source .env
 $ forge test --match-contract UniV3TestETH_Trust_* -vv --fork-url  https://mainnet.infura.io/v3/$WEB3_INFURA_PROJECT_ID --etherscan-api-key $ETHERSCAN_TOKEN
 ```
 
-### Format
-
-```shell
-$ forge fmt
-```
 
 ### Gas Snapshots
 
@@ -120,6 +115,7 @@ $ forge buld
 ```
 ### First build
 ```shell
-git clone git@gitlab.com:ubd2/ubdn-detrust.git
+git clone git@gitlab.com:ubd2/ubdn-multisig.git
+cd multisig
 git submodule update --init --recursive
 ```
