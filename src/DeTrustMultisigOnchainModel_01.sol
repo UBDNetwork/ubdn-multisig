@@ -114,6 +114,7 @@ contract DeTrustMultisigOnchainModel_01 is MultisigOnchainBase_01, FeeManager_01
     // Overiding hook for update Last Owner Op
     function _hookCheckSender(address _sender) internal override {
 
+        // TODO chek gas , memory to storage
         MultisigOnchainBase_01_Storage memory parent = getMultisigOnchainBase_01();
         if (parent.cosigners[0].signer == _sender){
             DeTrustMultisigOnchainModel_01_Storage storage $ = _getDeTrustMultisigOnchainModel_01_Storage();

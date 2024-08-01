@@ -85,9 +85,10 @@ contract OnchainBase_01_a_Test_01 is Test, Helper {
         assertEq(info.ops.length, lastNonce + 1);
         assertEq(info.ops[0].metaTx, _data);
         assertEq(info.ops[0].signedBy[0], address(11));
-        if (info.ops[0].status != MultisigOnchainBase_01.TxStatus.WaitingForSigners) {
-            revert TxStatusError(info.ops[0].status);
-        }
+        assertEq(uint8(info.ops[0].status), 0);
+        // if (info.ops[0].status != MultisigOnchainBase_01.TxStatus.WaitingForSigners) {
+        //     revert TxStatusError(info.ops[0].status);
+        // }
         
         // signer 
     }
