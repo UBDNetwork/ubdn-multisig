@@ -110,5 +110,23 @@ contract OnchainBase_01_a_Test_01 is Test, Helper {
         assertEq(info.ops[0].signedBy[2], address(13));
         assertEq(uint8(info.ops[0].status), uint8(MultisigOnchainBase_01.TxStatus.Executed));
         assertEq(info.cosigners[info.cosigners.length - 1].signer, address(15)); // check new cosigner
+
+        // try to add the signer again (he has already been in cosigner's list)
+        vm.startPrank(address(11));
+        vm.expectEmit();
+        expectedNonce = 1;
+        emit MultisigOnchainBase_01.SignatureAdded(expectedNonce, address(11), 1);
+        lastNonce =  multisig_instance.createAndSign(proxy, 0, _data);
+        vm.stopPrank();
+
+        vm.prank(address(12));
+        multisig_instance.signAndExecute(lastNonce, false);
+
+        vm.prank(address(13));
+        vm.expectRevert(
+            abi.encodeWithSelector(MultisigOnchainBase_01.CoSignerAlreadyExist.selector, address(15))
+        );
+        multisig_instance.signAndExecute(lastNonce, true);
+
     }
 }
