@@ -13,8 +13,7 @@ import {Helper} from "./fixtures/Helpers.sol";
 
 
 contract OnchainBase_01_a_Test_01 is Test, Helper {
-    error TxStatusError(MultisigOnchainBase_01.TxStatus status);
-
+    
     address public constant cosigner1 = address(11);
     address public constant cosigner2 = address(12);
     address public constant cosigner3 = address(13);
@@ -48,7 +47,7 @@ contract OnchainBase_01_a_Test_01 is Test, Helper {
 
         proxy = payable(createProxy(
             address(impl_00),
-            2, 
+            3, 
             _cosigners,
             _periodOrDateArray
         ));
@@ -78,6 +77,9 @@ contract OnchainBase_01_a_Test_01 is Test, Helper {
 
         // signer creates and sign the operation
         vm.startPrank(address(11));
+        vm.expectEmit();
+        uint256 expectedNonce = 0;
+        emit MultisigOnchainBase_01.SignatureAdded(expectedNonce, address(11), 1);
         lastNonce =  multisig_instance.createAndSign(proxy, 0, _data);
         vm.stopPrank();
 
@@ -85,19 +87,28 @@ contract OnchainBase_01_a_Test_01 is Test, Helper {
         assertEq(info.ops.length, lastNonce + 1);
         assertEq(info.ops[0].metaTx, _data);
         assertEq(info.ops[0].signedBy[0], address(11));
-        if (info.ops[0].status != MultisigOnchainBase_01.TxStatus.WaitingForSigners) {
-            revert TxStatusError(info.ops[0].status);
-        }
-        
-        // signer 
-    }
+        assertEq(uint8(info.ops[0].status), uint8(MultisigOnchainBase_01.TxStatus.WaitingForSigners));
 
-    /*function test_proxyAddress() public view {
-        assertEq(address(factory.modelRegistry()), address(0));
-        assertEq(address(factory.trustRegistry()), address(0));
-        console2.log("Implementation   addr: %s", address(impl_00));
-        console2.log("Proxy for     impl_00: %s", proxy);
-        assertFalse(address(impl_00) == proxy);
-        assertEq(erc20.balanceOf(proxy), sendERC20Amount);
-    }*/
+        // signer only signs tx
+        vm.prank(address(12));
+        emit MultisigOnchainBase_01.SignatureAdded(expectedNonce, address(12), 2);
+        uint256 signedByCount = multisig_instance.signAndExecute(lastNonce, false);
+        info = multisig_instance.getMultisigOnchainBase_01();
+        assertEq(signedByCount, 2);
+        assertEq(info.ops.length, lastNonce + 1);
+        assertEq(info.ops[0].signedBy[1], address(12));
+        assertEq(uint8(info.ops[0].status), uint8(MultisigOnchainBase_01.TxStatus.WaitingForSigners));
+
+        // signer signs and executes tx
+        vm.prank(address(13));
+        emit MultisigOnchainBase_01.SignatureAdded(expectedNonce, address(13), 3);
+        emit MultisigOnchainBase_01.TxExecuted(expectedNonce, address(13));
+        signedByCount = multisig_instance.signAndExecute(lastNonce, true);
+        info = multisig_instance.getMultisigOnchainBase_01();
+        assertEq(signedByCount, 3);
+        assertEq(info.ops.length, lastNonce + 1);
+        assertEq(info.ops[0].signedBy[2], address(13));
+        assertEq(uint8(info.ops[0].status), uint8(MultisigOnchainBase_01.TxStatus.Executed));
+        assertEq(info.cosigners[info.cosigners.length - 1].signer, address(15)); // check new cosigner
+    }
 }
