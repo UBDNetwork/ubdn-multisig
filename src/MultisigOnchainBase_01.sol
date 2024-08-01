@@ -125,7 +125,8 @@ abstract contract MultisigOnchainBase_01 is
         require(_cosignersAddresses.length <= MAX_COSIGNERS_NUMBER, "Too much inheritors");
         require(_cosignersAddresses.length == _validFrom.length, "Arrays must be equal");
         require(_threshold <= _cosignersAddresses.length, "Not greater then signers count");
-        require(_cosignersAddresses.length > 1, "At least one signer");
+        require(_cosignersAddresses.length >= 2, "At least two signers");
+        //require(_cosignersAddresses.length > 1, "At least one signer");
         require(_threshold > 0 , "No zero threshold");
 
         MultisigOnchainBase_01_Storage storage $ = _getMultisigOnchainBase_01_Storage();
