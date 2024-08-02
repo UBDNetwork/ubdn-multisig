@@ -129,9 +129,19 @@ abstract contract MultisigOnchainBase_01 is
         //require(_cosignersAddresses.length > 1, "At least one signer");
         require(_threshold > 0 , "No zero threshold");
 
+        // Check for no doubles
+        for (uint256 i = 0; i < _cosignersAddresses.length; ++ i) {
+            for (uint256 j = i + 1; j < _cosignersAddresses.length; ++ j){
+                require(_cosignersAddresses[i] != _cosignersAddresses[j],
+                    "No double cosigners"
+                );
+            }
+        }
+
         MultisigOnchainBase_01_Storage storage $ = _getMultisigOnchainBase_01_Storage();
         $.threshold = _threshold;
         for (uint8 i; i < _cosignersAddresses.length; ++ i) {
+            require(_cosignersAddresses[i] != address(0), "No Zero address");
             $.cosigners.push(Signer(_cosignersAddresses[i], _validFrom[i]));
         }
     }
