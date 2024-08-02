@@ -55,6 +55,7 @@ abstract contract MultisigOnchainBase_01 is
      * @dev The caller account is not authorized to perform an operation.
      */
     //error OwnableUnauthorizedAccount(address account);
+    
     error ActionDeniedForThisStatus(TxStatus status);
     error NeedMoreValidSignatures(uint8 needMore);
     error CoSignerAlreadyExist(address signer);
@@ -374,6 +375,8 @@ abstract contract MultisigOnchainBase_01 is
         op.target = _target;
         op.value = _value;
         op.metaTx = _data;
+        // Next asignment is not necessery because default var value
+        // op.status = TxStatus.WaitingForSigners 
         nonce_ = $.ops.length -1;
         Signer[] storage _sgnrs = $.cosigners;
         _checkSigner(_msgSender(), _sgnrs);
@@ -388,6 +391,9 @@ abstract contract MultisigOnchainBase_01 is
         internal
         returns (uint256 signedByCount) 
     {
+        if (_op.status != TxStatus.WaitingForSigners) {
+            revert ActionDeniedForThisStatus(_op.status); 
+        }
         // Check that not signed before
         for (uint256 i; i < _op.signedBy.length; ++ i) {
             if (_op.signedBy[i] == _signer) {
@@ -424,7 +430,7 @@ abstract contract MultisigOnchainBase_01 is
         MultisigOnchainBase_01_Storage storage $ = _getMultisigOnchainBase_01_Storage();
         if (
                _op.status == TxStatus.WaitingForSigners 
-               && _op.signedBy.length == $.threshold
+               && _op.signedBy.length >= $.threshold
         ) 
         {
             r = Address.functionCallWithValue(
