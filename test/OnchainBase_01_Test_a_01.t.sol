@@ -128,5 +128,17 @@ contract OnchainBase_01_a_Test_01 is Test, Helper {
         );
         multisig_instance.signAndExecute(lastNonce, true);
 
+        // try to sign executed tx - wait fail
+        vm.prank(address(14));
+        vm.expectRevert(
+            abi.encodeWithSelector(MultisigOnchainBase_01.CoSignerAlreadyExist.selector, address(15))
+        );
+        signedByCount = multisig_instance.signAndExecute(lastNonce, true);
+
+        vm.prank(address(13));
+        vm.expectRevert(
+            abi.encodeWithSelector(MultisigOnchainBase_01.CoSignerAlreadyExist.selector, address(15))
+        );
+        signedByCount = multisig_instance.signAndExecute(lastNonce, true);
     }
 }
