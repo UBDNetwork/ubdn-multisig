@@ -5,7 +5,8 @@ import {Test, console2} from "forge-std/Test.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
 import {DeTrustMultisigFactory} from "../src/DeTrustMultisigFactory.sol";
-import {MockMultisigOnchainBase_01} from "../src/mock/MockMultisigOnchainBase_01.sol";
+// import {MockMultisigOnchainBase_01} from "../src/mock/MockMultisigOnchainBase_01.sol";
+import "../src/mock/MockMultisigOnchainBase_01.sol";
 import {MockERC20} from "../src/mock/MockERC20.sol";
 
 
@@ -131,5 +132,17 @@ contract OnchainBase_01_Test is Test {
         MockMultisigOnchainBase_01.MultisigOnchainBase_01_Storage memory info 
             = multisig_instance.getMultisigOnchainBase_01();   
         assertEq(4, info.cosigners.length);
+        assertEq(signCount, info.threshold);
+
+         // Third signature
+        vm.startPrank(addr3);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                MultisigOnchainBase_01.ActionDeniedForThisStatus.selector, 
+                MultisigOnchainBase_01.TxStatus.Executed
+            )
+        );
+        signCount = multisig_instance.signAndExecute(lastNonce, false);
+        vm.stopPrank(); 
     }
 }
