@@ -56,9 +56,10 @@ contract OnchainBase_01_a_Test_03 is Test {
             _cosigners1[i] = address(100);
             _periodOrDateArray1[i] = uint64(0);
         }
-        _cosigners1[99] = address(11);
-        _periodOrDateArray1[99] = uint64(0);
+        //_cosigners1[99] = address(11);
+        //_periodOrDateArray1[99] = uint64(0);
 
+        vm.expectRevert('No double cosigners');
         proxy = payable(factory.deployProxyForTrust(
             address(impl_00),
             2, 
@@ -67,18 +68,34 @@ contract OnchainBase_01_a_Test_03 is Test {
             detrustName, 
             keccak256("PROMO")
         ));
-
+        
         // in adding to cosigner time
         bytes memory _data = abi.encodeWithSignature(
             "addSigner(address,uint64)",
             address(1500), 0
         );
+        address[] memory _cosigners2 = new address[](100);
+        uint64[] memory _periodOrDateArray2 = new uint64[](100);
+        for (uint160 i = 1; i <= 100; ++ i) {
+            _cosigners2[i - 1] = address(i);
+            _periodOrDateArray2[i - 1] = uint64(0);
+        }
+
+        proxy = payable(factory.deployProxyForTrust(
+            address(impl_00),
+            2, 
+            _cosigners2,
+            _periodOrDateArray2,
+            detrustName, 
+            keccak256("PROMO")
+        ));
+        
         MockMultisigOnchainBase_01 multisig_instance = MockMultisigOnchainBase_01(proxy);
         vm.startPrank(address(11));
         uint256 lastNonce =  multisig_instance.createAndSign(proxy, 0, _data);
         vm.stopPrank();
 
-        vm.prank(address(100));
+        vm.prank(address(99));
         vm.expectRevert('Too much inheritors');
         multisig_instance.signAndExecute(lastNonce, true);
     }

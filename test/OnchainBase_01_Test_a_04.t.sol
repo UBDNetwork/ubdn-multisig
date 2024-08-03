@@ -69,12 +69,17 @@ contract OnchainBase_01_a_Test_04 is Test, Helper {
         uint256 signCount = multisig_instance.signAndExecute(lastNonce, true);
         vm.stopPrank(); 
 
+        // try to execute executed operation - signer has not already signed operation
         vm.prank(address(13));
+        vm.expectRevert(
+            abi.encodeWithSelector(MultisigOnchainBase_01.ActionDeniedForThisStatus.selector, MultisigOnchainBase_01.TxStatus.Executed)
+        );
         multisig_instance.signAndExecute(lastNonce, true);
 
+        // try to execute executed operation - signer has already signed operation
         vm.prank(address(12));
         vm.expectRevert(
-            abi.encodeWithSelector(MultisigOnchainBase_01.CoSignerAlreadyExist.selector, address(12))
+            abi.encodeWithSelector(MultisigOnchainBase_01.ActionDeniedForThisStatus.selector, MultisigOnchainBase_01.TxStatus.Executed)
         );
         multisig_instance.signAndExecute(lastNonce, true);
     }
