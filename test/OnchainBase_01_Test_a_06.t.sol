@@ -12,8 +12,8 @@ import {MockERC20} from "../src/mock/MockERC20.sol";
 import {Helper} from "./fixtures/Helpers.sol";
 
 
-// try to execute when the signature count is not enough
-contract OnchainBase_01_a_Test_05 is Test, Helper {
+// non-cosigner tries to execute operation
+contract OnchainBase_01_a_Test_06 is Test, Helper {
     
     address public constant cosigner1 = address(11);
     address public constant cosigner2 = address(12);
@@ -48,7 +48,7 @@ contract OnchainBase_01_a_Test_05 is Test, Helper {
 
         proxy = payable(createProxy(
             address(impl_00),
-            4, 
+            2, 
             _cosigners,
             _periodOrDateArray
         ));
@@ -64,25 +64,23 @@ contract OnchainBase_01_a_Test_05 is Test, Helper {
         uint256 lastNonce =  multisig_instance.createAndSign(address(erc20), 0, _data);
         vm.stopPrank();
         
-        // Second signature and execute!! Not enough signatures!
+        // Second signature 
         vm.startPrank(address(12));
-        uint256 signCount = multisig_instance.signAndExecute(lastNonce, true);
+        uint256 signCount = multisig_instance.signAndExecute(lastNonce, false);
         vm.stopPrank();
 
-        // check - only added new signature
+        // check 
         MockMultisigOnchainBase_01.MultisigOnchainBase_01_Storage memory info = multisig_instance.getMultisigOnchainBase_01();
-        assertEq(info.ops[0].signedBy[1], address(12));
-        assertEq(erc20.balanceOf(address(11)), 0);
         assertEq(uint8(info.ops[0].status), uint8(MultisigOnchainBase_01.TxStatus.WaitingForSigners));
 
-        // execute!! Not enough signatures!
-        vm.startPrank(address(12));
+        // execute by non-cosigner
+        vm.startPrank(address(15));
         multisig_instance.executeOp(lastNonce);
         vm.stopPrank();
 
         // check - nothing has changed!
         info = multisig_instance.getMultisigOnchainBase_01();
-        assertEq(erc20.balanceOf(address(11)), 0);
-        assertEq(uint8(info.ops[0].status), uint8(MultisigOnchainBase_01.TxStatus.WaitingForSigners));
+        assertEq(erc20.balanceOf(address(11)), sendERC20Amount/2);
+        assertEq(uint8(info.ops[0].status), uint8(MultisigOnchainBase_01.TxStatus.Executed));
     }
 }
