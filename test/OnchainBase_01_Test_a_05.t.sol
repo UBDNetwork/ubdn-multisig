@@ -13,7 +13,7 @@ import {Helper} from "./fixtures/Helpers.sol";
 
 
 // try to execute already executed operation
-contract OnchainBase_01_a_Test_04 is Test, Helper {
+contract OnchainBase_01_a_Test_05 is Test, Helper {
     
     address public constant cosigner1 = address(11);
     address public constant cosigner2 = address(12);
@@ -48,7 +48,7 @@ contract OnchainBase_01_a_Test_04 is Test, Helper {
 
         proxy = payable(createProxy(
             address(impl_00),
-            2, 
+            4, 
             _cosigners,
             _periodOrDateArray
         ));
@@ -63,25 +63,26 @@ contract OnchainBase_01_a_Test_04 is Test, Helper {
         vm.startPrank(address(11));
         uint256 lastNonce =  multisig_instance.createAndSign(address(erc20), 0, _data);
         vm.stopPrank();
-        MockMultisigOnchainBase_01.MultisigOnchainBase_01_Storage memory info = multisig_instance.getMultisigOnchainBase_01();
         
-        // Second signature and execute
+        // Second signature and execute!! Not enough signatures!
         vm.startPrank(address(12));
         uint256 signCount = multisig_instance.signAndExecute(lastNonce, true);
-        vm.stopPrank(); 
+        vm.stopPrank();
 
-        // try to execute executed operation - signer has not already signed operation
-        vm.prank(address(13));
-        vm.expectRevert(
-            abi.encodeWithSelector(MultisigOnchainBase_01.ActionDeniedForThisStatus.selector, MultisigOnchainBase_01.TxStatus.Executed)
-        );
-        multisig_instance.signAndExecute(lastNonce, true);
+        // check - only added new signature
+        MockMultisigOnchainBase_01.MultisigOnchainBase_01_Storage memory info = multisig_instance.getMultisigOnchainBase_01();
+        assertEq(info.ops[0].signedBy[1], address(12));
+        assertEq(erc20.balanceOf(address(11)), 0);
+        assertEq(uint8(info.ops[0].status), uint8(MultisigOnchainBase_01.TxStatus.WaitingForSigners));
 
-        // try to execute executed operation - signer has already signed operation
-        vm.prank(address(12));
-        vm.expectRevert(
-            abi.encodeWithSelector(MultisigOnchainBase_01.ActionDeniedForThisStatus.selector, MultisigOnchainBase_01.TxStatus.Executed)
-        );
-        multisig_instance.signAndExecute(lastNonce, true);
+        // execute!! Not enough signatures!
+        vm.startPrank(address(12));
+        multisig_instance.executeOp(lastNonce);
+        vm.stopPrank();
+
+        // check - nothing has changed!
+        info = multisig_instance.getMultisigOnchainBase_01();
+        assertEq(erc20.balanceOf(address(11)), 0);
+        assertEq(uint8(info.ops[0].status), uint8(MultisigOnchainBase_01.TxStatus.WaitingForSigners));
     }
 }

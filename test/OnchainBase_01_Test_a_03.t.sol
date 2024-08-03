@@ -56,8 +56,6 @@ contract OnchainBase_01_a_Test_03 is Test {
             _cosigners1[i] = address(100);
             _periodOrDateArray1[i] = uint64(0);
         }
-        //_cosigners1[99] = address(11);
-        //_periodOrDateArray1[99] = uint64(0);
 
         vm.expectRevert('No double cosigners');
         proxy = payable(factory.deployProxyForTrust(
