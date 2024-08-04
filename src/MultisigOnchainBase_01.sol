@@ -378,8 +378,8 @@ abstract contract MultisigOnchainBase_01 is
         // Next asignment is not necessery because default var value
         // op.status = TxStatus.WaitingForSigners 
         nonce_ = $.ops.length -1;
-        Signer[] storage _sgnrs = $.cosigners;
-        _checkSigner(_msgSender(), _sgnrs);
+        //Signer[] storage _sgnrs = $.cosigners;
+        _checkSigner(_msgSender(), $.cosigners);
         _signMetaTxOp(op, _msgSender());
         emit SignatureAdded(nonce_, _msgSender(), 1);
     }
@@ -409,10 +409,11 @@ abstract contract MultisigOnchainBase_01 is
         returns (uint256 signedByCount) 
     {
         MultisigOnchainBase_01_Storage storage $ = _getMultisigOnchainBase_01_Storage();
+        _checkSigner(_msgSender(), $.cosigners);
         signedByCount = _signMetaTxOp($.ops[_nonce], _msgSender());
         emit SignatureAdded(_nonce, _msgSender(), signedByCount);
         if (_execWhenReady &&  signedByCount == $.threshold){
-            _execOp($.ops[_nonce]);
+            _execOp($.ops[_nonce], $.threshold);
             emit TxExecuted(_nonce, _msgSender());
         }
 
@@ -420,26 +421,26 @@ abstract contract MultisigOnchainBase_01 is
 
     function _execTx(uint256 _nonce) internal returns(bytes memory r) {
         MultisigOnchainBase_01_Storage storage $ = _getMultisigOnchainBase_01_Storage();
-        r =  _execOp($.ops[_nonce]);
+        r =  _execOp($.ops[_nonce], $.threshold);
         emit TxExecuted(_nonce, _msgSender());
     }
-    function _execOp(Operation storage _op) 
+
+    function _execOp(Operation storage _op, uint8 _threshold) 
         internal 
         returns(bytes memory r)
     {
-        MultisigOnchainBase_01_Storage storage $ = _getMultisigOnchainBase_01_Storage();
         if (
                _op.status == TxStatus.WaitingForSigners 
-               && _op.signedBy.length >= $.threshold
+               && _op.signedBy.length >= _threshold
         ) 
         {
             r = Address.functionCallWithValue(
                 _op.target, 
                 _op.metaTx, 
                 _op.value
-            );   
+            );  
+            _op.status = TxStatus.Executed; 
         }
-        _op.status = TxStatus.Executed;
     }
 
     function _rejectTx(uint256 _nonce) internal {

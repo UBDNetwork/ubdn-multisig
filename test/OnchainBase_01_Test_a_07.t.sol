@@ -66,6 +66,12 @@ contract OnchainBase_01_a_Test_07 is Test, Helper {
         
         // Second signature and execute - by non-cosigner - expect revert!!
         vm.startPrank(address(16));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                MultisigOnchainBase_01.CoSignerNotExist.selector, 
+                address(16)
+            )
+        );
         multisig_instance.signAndExecute(lastNonce, true);
         vm.stopPrank();
 
