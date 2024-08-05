@@ -61,11 +61,16 @@ abstract contract MultisigOnchainBase_01 is
     error CoSignerAlreadyExist(address signer);
     error CoSignerNotValid(address signer);
     error CoSignerNotExist(address signer);
+    error ExecutionDenied(TxStatus status, uint8 signaturesNumber);
 
     event SignatureAdded(uint256 indexed nonce, address signer, uint256 totalSignaturesCollected);
     event SignatureRevoked(uint256 indexed nonce, address signer, uint256 totalSignaturesCollected);
     event TxExecuted(uint256 indexed nonce, address sender);
     event TxRejected(uint256 indexed nonce, address sender);
+    event SignerAdded(Signer signer, uint8 newCosignersNumber);
+    event SignerRemoved(Signer signer, uint8 newCosignersNumber);
+    event SignerChanged(address  signer, uint64 oldDate, uint64 newDate);
+    event ThresholdChanged(uint8 thresholdOld, uint8 thresholdNew);
 
     /**
      * @dev Throws if called by any account other than this contract or proxy
@@ -165,8 +170,11 @@ abstract contract MultisigOnchainBase_01 is
      */
     function changeThreshold(uint8 _newThreshold) external onlySelfSender {
         MultisigOnchainBase_01_Storage storage $ = _getMultisigOnchainBase_01_Storage();
+
         require(_newThreshold >= $.cosigners.length, "New Threshold less than co-signers count");
+        emit ThresholdChanged(uint8($.cosigners.length), _newThreshold);
         $.threshold = _newThreshold;
+
     }
 
     /**
@@ -193,6 +201,7 @@ abstract contract MultisigOnchainBase_01 is
             }
         }
         $.cosigners.push(Signer(_newSigner, _newPeriod));
+        emit SignerAdded(Signer(_newSigner, _newPeriod), signersCount);
     }
 
     function editSignerDate(address _coSigner, uint64 _newPeriod) 
@@ -206,6 +215,7 @@ abstract contract MultisigOnchainBase_01 is
         for (uint256 i = 0; i < $.cosigners.length - 1; ++ i) {
             if ($.cosigners[i].signer == _coSigner) {
                 require(i != 0, "Cant edit owner's period");
+                emit SignerChanged(_coSigner,  $.cosigners[i].validFrom, _newPeriod);
                 $.cosigners[i].validFrom = _newPeriod;
             }
         }
@@ -227,7 +237,7 @@ abstract contract MultisigOnchainBase_01 is
         signersCount = uint8($.cosigners.length - 1);
         require(signersCount >= $.threshold, "New Signers count less then threshold");
         require(_signerIndex == 0, "Cant remove multisig owner(creator)");
-
+        emit SignerRemoved($.cosigners[_signerIndex], signersCount);
         // if deleting index is not last array element then need to replace it with last
         if (_signerIndex != signersCount + 1) {
             $.cosigners[_signerIndex] = $.cosigners[signersCount + 1];
@@ -440,6 +450,8 @@ abstract contract MultisigOnchainBase_01 is
                 _op.value
             );  
             _op.status = TxStatus.Executed; 
+        } else {
+            revert ExecutionDenied(_op.status, uint8(_op.signedBy.length));
         }
     }
 
