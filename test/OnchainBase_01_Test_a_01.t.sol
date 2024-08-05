@@ -128,14 +128,23 @@ contract OnchainBase_01_a_Test_01 is Test, Helper {
         );
         multisig_instance.signAndExecute(lastNonce, true);
 
-        // try to sign executed tx - wait fail
+        // try to sign and execute tx - wait fail - time to be valid has not come
         vm.prank(address(14));
         vm.expectRevert(
-            abi.encodeWithSelector(MultisigOnchainBase_01.CoSignerAlreadyExist.selector, address(15))
+            abi.encodeWithSelector(MultisigOnchainBase_01.CoSignerNotValid.selector, address(14))
         );
         signedByCount = multisig_instance.signAndExecute(lastNonce, true);
 
-        vm.prank(address(13));
+        // second time to sign (there is the signature of this co-signer)
+        vm.prank(address(12));
+        vm.expectRevert(
+            abi.encodeWithSelector(MultisigOnchainBase_01.CoSignerAlreadyExist.selector, address(12))
+        );
+        signedByCount = multisig_instance.signAndExecute(lastNonce, true);
+        
+        // try to sign and execute tx - wait fail - time to be valid has not come
+        vm.warp(10001);
+        vm.prank(address(14));
         vm.expectRevert(
             abi.encodeWithSelector(MultisigOnchainBase_01.CoSignerAlreadyExist.selector, address(15))
         );

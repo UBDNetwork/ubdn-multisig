@@ -75,14 +75,25 @@ contract OnchainBase_01_a_Test_07 is Test, Helper {
         multisig_instance.signAndExecute(lastNonce, true);
         vm.stopPrank();
 
-        // third signature - by non-cosigner - expect revert!!
+        // second signature - by non-cosigner - expect revert!!
         vm.startPrank(address(17));
-        //multisig_instance.signAndExecute(lastNonce, false);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                MultisigOnchainBase_01.CoSignerNotExist.selector, 
+                address(17)
+            )
+        );
+        multisig_instance.signAndExecute(lastNonce, false);
+        vm.stopPrank();
+
+        // try to execute when signature count is not enough
+        vm.startPrank(address(12));
+        multisig_instance.executeOp(lastNonce);
         vm.stopPrank();
 
         // check 
-        /*MockMultisigOnchainBase_01.MultisigOnchainBase_01_Storage memory info = multisig_instance.getMultisigOnchainBase_01();
+        MockMultisigOnchainBase_01.MultisigOnchainBase_01_Storage memory info = multisig_instance.getMultisigOnchainBase_01();
         assertEq(uint8(info.ops[0].status), uint8(MultisigOnchainBase_01.TxStatus.WaitingForSigners));
-        assertEq(erc20.balanceOf(address(11)), 0);*/
+        assertEq(erc20.balanceOf(address(11)), 0);
     }
 }
