@@ -88,6 +88,13 @@ contract OnchainBase_01_a_Test_07 is Test, Helper {
 
         // try to execute when signature count is not enough
         vm.startPrank(address(12));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                MultisigOnchainBase_01.ExecutionDenied.selector, 
+                MultisigOnchainBase_01.TxStatus.WaitingForSigners,
+                1
+            )
+        );
         multisig_instance.executeOp(lastNonce);
         vm.stopPrank();
 

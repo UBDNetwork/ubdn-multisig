@@ -142,7 +142,7 @@ contract OnchainBase_01_a_Test_01 is Test, Helper {
         );
         signedByCount = multisig_instance.signAndExecute(lastNonce, true);
         
-        // try to sign and execute tx - wait fail - time to be valid has not come
+        // try to sign and execute tx - wait fail - time to be valid has come
         vm.warp(10001);
         vm.prank(address(14));
         vm.expectRevert(
