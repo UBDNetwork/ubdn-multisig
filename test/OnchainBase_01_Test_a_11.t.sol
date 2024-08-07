@@ -11,9 +11,8 @@ import "../src/MultisigOnchainBase_01.sol";
 import {MockERC20} from "../src/mock/MockERC20.sol";
 import {Helper} from "./fixtures/Helpers.sol";
 
-
-// remove cosigner: check several cases
-contract OnchainBase_01_a_Test_09 is Test, Helper {
+// edit cosigner: check several cases
+contract OnchainBase_01_a_Test_11 is Test, Helper {
     
     address public constant cosigner1 = address(11);
     address public constant cosigner2 = address(12);
@@ -51,95 +50,68 @@ contract OnchainBase_01_a_Test_09 is Test, Helper {
         ));
     }
 
-    function test_deleteSigner() public {
+    function test_editSigner() public {
         MockMultisigOnchainBase_01 multisig_instance = MockMultisigOnchainBase_01(proxy);
 
         vm.prank(address(11));
         vm.expectRevert('Only Self Signed');
-        multisig_instance.removeSignerByIndex(2);
+        multisig_instance.editSignerDate(cosigner2, 1000);
 
         bytes memory _data = abi.encodeWithSignature(
-            "removeSignerByIndex(uint256)",
-            2
+            "editSignerDate(address,uint64)",
+            cosigner2, uint64(1000)
         );
         
         MockMultisigOnchainBase_01.MultisigOnchainBase_01_Storage memory info = multisig_instance.getMultisigOnchainBase_01();
-        
+        // non-cosigner ties to create the operation
+        vm.prank(address(15));
+        vm.expectRevert(
+            abi.encodeWithSelector(MultisigOnchainBase_01.CoSignerNotExist.selector, address(15))
+        );
+        multisig_instance.createAndSign(proxy, 0, _data);
+
         // signer creates and sign the operation
-        vm.startPrank(address(11));
+        vm.startPrank(cosigner1);
         uint256 expectedNonce = 0;
-        emit MultisigOnchainBase_01.SignatureAdded(0, address(11), 1);
+        emit MultisigOnchainBase_01.SignatureAdded(expectedNonce, address(11), 1);
         multisig_instance.createAndSign(proxy, 0, _data);
         // nonce = 0
         vm.stopPrank();
 
         // sign and execute
-        vm.prank(address(12));
-        emit MultisigOnchainBase_01.SignerRemoved(MultisigOnchainBase_01.Signer(cosigner3, 0), uint8(3));
+        vm.prank(cosigner2);
+        emit MultisigOnchainBase_01.SignerChanged(
+            info.cosigners[1].signer, 
+            info.cosigners[1].validFrom, 
+            uint64(1000));
         multisig_instance.signAndExecute(0, true);
         info = multisig_instance.getMultisigOnchainBase_01();
-        assertEq(info.cosigners.length, 3);
-        assertEq(info.cosigners[0].signer, cosigner1);
-        assertEq(info.cosigners[1].signer, cosigner2);
-        assertEq(info.cosigners[2].signer, cosigner4);
+        assertEq(info.cosigners[1].validFrom, uint64(1000));
 
-        // co-signer is deleted from co-signer's list. Try to sign by him. Wait revert!
+        // co-signer is edited. Try to sign by him. Wait revert!
         _data = abi.encodeWithSignature(
             "transfer(address,uint256)",
             address(11), sendERC20Amount/2
         );
 
-        vm.prank(cosigner3);
+        vm.prank(cosigner2);
         vm.expectRevert(
-            abi.encodeWithSelector(MultisigOnchainBase_01.CoSignerNotExist.selector, cosigner3)
+            abi.encodeWithSelector(MultisigOnchainBase_01.CoSignerNotValid.selector, cosigner2)
         );
         multisig_instance.createAndSign(proxy, 0, _data);
 
-        // try to delete owner from co-signer's list
+        // try to edit owner
         _data = abi.encodeWithSignature(
-            "removeSignerByIndex(uint256)",
-            0
+            "editSignerDate(address,uint64)",
+            cosigner1, uint64(1000)
         );
 
         vm.prank(cosigner1);
         multisig_instance.createAndSign(proxy, 0, _data);
         // nonce = 1
 
-        vm.prank(cosigner2);
-        vm.expectRevert('Cant remove multisig owner(creator)');
-        multisig_instance.signAndExecute(1, true);
-
-        // return co-signer back to list
-         _data = abi.encodeWithSignature(
-            "addSigner(address,uint64)",
-            cosigner3, 0
-        );
-
-        vm.startPrank(cosigner1);
-        uint256 lastNonce =  multisig_instance.createAndSign(proxy, 0, _data);
-        // nonce = 2
-        vm.stopPrank();
-
-        // sign and execute
-        vm.prank(address(12));
-        multisig_instance.signAndExecute(lastNonce, true);
-        info = multisig_instance.getMultisigOnchainBase_01();
-        assertEq(info.cosigners.length, 4);
-        assertEq(info.cosigners[3].signer, cosigner3);
-
-        // check rights of new cosigner
-        _data = abi.encodeWithSignature(
-            "transfer(address,uint256)",
-            address(11), sendERC20Amount/2
-        );
         vm.prank(cosigner3);
-        emit MultisigOnchainBase_01.SignatureAdded(expectedNonce, cosigner3, 1);
-        lastNonce = multisig_instance.createAndSign(proxy, 0, _data);
-        // nonce = 3
-        info = multisig_instance.getMultisigOnchainBase_01();
-        assertEq(info.ops[lastNonce].signedBy[0], cosigner3);
-
-
-
+        vm.expectRevert("Cant edit owner's period");
+        multisig_instance.signAndExecute(1, true);
     }
 }
