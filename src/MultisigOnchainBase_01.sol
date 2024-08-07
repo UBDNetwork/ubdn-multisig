@@ -234,13 +234,15 @@ abstract contract MultisigOnchainBase_01 is
     {
         MultisigOnchainBase_01_Storage storage $ = _getMultisigOnchainBase_01_Storage();
         // decrease count for succesfull tx (GAS SAFE)
+        //signersCount = uint8($.cosigners.length - 1);
         signersCount = uint8($.cosigners.length - 1);
         require(signersCount >= $.threshold, "New Signers count less then threshold");
-        require(_signerIndex == 0, "Cant remove multisig owner(creator)");
+        require(_signerIndex != 0, "Cant remove multisig owner(creator)");
         emit SignerRemoved($.cosigners[_signerIndex], signersCount);
         // if deleting index is not last array element then need to replace it with last
         if (_signerIndex != signersCount + 1) {
-            $.cosigners[_signerIndex] = $.cosigners[signersCount + 1];
+            //$.cosigners[_signerIndex] = $.cosigners[signersCount + 1];
+            $.cosigners[_signerIndex] = $.cosigners[signersCount];
         }
         $.cosigners.pop();
     }
