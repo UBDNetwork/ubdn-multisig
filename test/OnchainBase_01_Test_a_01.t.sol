@@ -85,9 +85,9 @@ contract OnchainBase_01_a_Test_01 is Test, Helper {
 
         MockMultisigOnchainBase_01.MultisigOnchainBase_01_Storage memory info = multisig_instance.getMultisigOnchainBase_01();
         assertEq(info.ops.length, lastNonce + 1);
-        assertEq(info.ops[0].metaTx, _data);
-        assertEq(info.ops[0].signedBy[0], address(11));
-        assertEq(uint8(info.ops[0].status), uint8(MultisigOnchainBase_01.TxStatus.WaitingForSigners));
+        assertEq(info.ops[lastNonce].metaTx, _data);
+        assertEq(info.ops[lastNonce].signedBy[0], address(11));
+        assertEq(uint8(info.ops[lastNonce].status), uint8(MultisigOnchainBase_01.TxStatus.WaitingForSigners));
 
         // signer only signs tx
         vm.prank(address(12));
@@ -96,7 +96,7 @@ contract OnchainBase_01_a_Test_01 is Test, Helper {
         info = multisig_instance.getMultisigOnchainBase_01();
         assertEq(signedByCount, 2);
         assertEq(info.ops.length, lastNonce + 1);
-        assertEq(info.ops[0].signedBy[1], address(12));
+        assertEq(info.ops[lastNonce].signedBy[1], address(12));
         assertEq(uint8(info.ops[0].status), uint8(MultisigOnchainBase_01.TxStatus.WaitingForSigners));
 
         // signer signs and executes tx
@@ -107,8 +107,8 @@ contract OnchainBase_01_a_Test_01 is Test, Helper {
         info = multisig_instance.getMultisigOnchainBase_01();
         assertEq(signedByCount, 3);
         assertEq(info.ops.length, lastNonce + 1);
-        assertEq(info.ops[0].signedBy[2], address(13));
-        assertEq(uint8(info.ops[0].status), uint8(MultisigOnchainBase_01.TxStatus.Executed));
+        assertEq(info.ops[lastNonce].signedBy[2], address(13));
+        assertEq(uint8(info.ops[lastNonce].status), uint8(MultisigOnchainBase_01.TxStatus.Executed));
         assertEq(info.cosigners[info.cosigners.length - 1].signer, address(15)); // check new cosigner
 
         // try to add the signer again (he has already been in cosigner's list)
