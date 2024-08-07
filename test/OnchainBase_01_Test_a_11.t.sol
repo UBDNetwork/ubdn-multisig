@@ -98,7 +98,7 @@ contract OnchainBase_01_a_Test_11 is Test, Helper {
         vm.expectRevert(
             abi.encodeWithSelector(MultisigOnchainBase_01.CoSignerNotValid.selector, cosigner2)
         );
-        multisig_instance.createAndSign(proxy, 0, _data);
+        multisig_instance.createAndSign(address(erc20), 0, _data);
 
         // try to edit owner
         _data = abi.encodeWithSignature(

@@ -99,6 +99,20 @@ contract OnchainBase_01_a_Test_01 is Test, Helper {
         assertEq(info.ops[lastNonce].signedBy[1], address(12));
         assertEq(uint8(info.ops[0].status), uint8(MultisigOnchainBase_01.TxStatus.WaitingForSigners));
 
+        // second time to sign (there is the signature of this co-signer for the operation)
+        vm.prank(address(12));
+        vm.expectRevert(
+            abi.encodeWithSelector(MultisigOnchainBase_01.CoSignerAlreadyExist.selector, address(12))
+        );
+        signedByCount = multisig_instance.signAndExecute(lastNonce, false);
+
+        // second time to sign and execute (there is the signature of this co-signer for the operation)
+        vm.prank(address(12));
+        vm.expectRevert(
+            abi.encodeWithSelector(MultisigOnchainBase_01.CoSignerAlreadyExist.selector, address(12))
+        );
+        signedByCount = multisig_instance.signAndExecute(lastNonce, true);
+
         // signer signs and executes tx
         vm.prank(address(13));
         emit MultisigOnchainBase_01.SignatureAdded(expectedNonce, address(13), 3);
@@ -111,7 +125,7 @@ contract OnchainBase_01_a_Test_01 is Test, Helper {
         assertEq(uint8(info.ops[lastNonce].status), uint8(MultisigOnchainBase_01.TxStatus.Executed));
         assertEq(info.cosigners[info.cosigners.length - 1].signer, address(15)); // check new cosigner
 
-        // try to add the signer again (he has already been in cosigner's list)
+        // try to add the signer again (he has already been in cosigner's list) 
         vm.startPrank(address(11));
         vm.expectEmit();
         expectedNonce = 1;
@@ -141,7 +155,7 @@ contract OnchainBase_01_a_Test_01 is Test, Helper {
             abi.encodeWithSelector(MultisigOnchainBase_01.CoSignerAlreadyExist.selector, address(12))
         );
         signedByCount = multisig_instance.signAndExecute(lastNonce, true);
-        
+    
         // try to sign and execute tx - wait fail - time to be valid has come
         vm.warp(10001);
         vm.prank(address(14));

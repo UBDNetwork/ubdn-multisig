@@ -93,7 +93,7 @@ contract OnchainBase_01_a_Test_09 is Test, Helper {
         vm.expectRevert(
             abi.encodeWithSelector(MultisigOnchainBase_01.CoSignerNotExist.selector, cosigner3)
         );
-        multisig_instance.createAndSign(proxy, 0, _data);
+        multisig_instance.createAndSign(address(erc20), 0, _data);
 
         // try to delete owner from co-signer's list
         _data = abi.encodeWithSignature(
@@ -134,7 +134,7 @@ contract OnchainBase_01_a_Test_09 is Test, Helper {
         );
         vm.prank(cosigner3);
         emit MultisigOnchainBase_01.SignatureAdded(expectedNonce, cosigner3, 1);
-        lastNonce = multisig_instance.createAndSign(proxy, 0, _data);
+        lastNonce = multisig_instance.createAndSign(address(erc20), 0, _data);
         // nonce = 3
         info = multisig_instance.getMultisigOnchainBase_01();
         assertEq(info.ops[lastNonce].signedBy[0], cosigner3);
