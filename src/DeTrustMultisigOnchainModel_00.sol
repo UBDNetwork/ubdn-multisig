@@ -39,11 +39,44 @@ contract DeTrustMultisigOnchainModel_00 is MultisigOnchainBase_01, FeeManager_01
     }
 
      /**  
+     * @dev Use this method for sign metaTx onchain and execute as well
+     * @param _nonce index of saved Meta Tx
+     * @param _execWhenReady if true then tx will be executed if all signatures are collected
+     */
+    function signAndExecute(uint256 _nonce, bool _execWhenReady) 
+        public
+        override 
+        returns(uint256 signedByCount) 
+    {
+        _chargeFee(0);
+        super.signAndExecute(_nonce, _execWhenReady);
+    }
+
+    /**  
+     * @dev Use this method for execute tx
+     * @param _nonce index of saved Meta Tx
+     */
+    function executeOp(uint256 _nonce) public override returns(bytes memory r){
+        _chargeFee(0);
+        super.executeOp(_nonce);
+    }
+
+    /**  
+     * @dev Use this method for  execute batch of well signed tx
+     * @param _nonces index of saved Meta Tx
+     */
+    function executeOp(uint256[] memory _nonces) public override returns(bytes memory r){
+        _chargeFee(0);
+        super.executeOp(_nonces);
+    }   
+
+
+    /**  
      * @dev Use this method for pay in advance any periods. Available only 
      * for trust owner or inheritor
      * @param _numberOfPeriods to pay fee in advance
      */
-    function payFeeAdvance(uint64 _numberOfPeriods) external {
+    function payFeeAdvance(uint64 _numberOfPeriods) external onlySelfSender{
         _chargeFee(_numberOfPeriods);
     }
 

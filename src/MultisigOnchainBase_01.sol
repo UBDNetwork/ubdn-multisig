@@ -281,7 +281,8 @@ abstract contract MultisigOnchainBase_01 is
      * @param _execWhenReady if true then tx will be executed if all signatures are collected
      */
     function signAndExecute(uint256 _nonce, bool _execWhenReady) 
-        public 
+        public
+        virtual 
         returns(uint256 signedByCount) 
     {
         signedByCount = _signMetaTx(_nonce,_execWhenReady);
@@ -289,10 +290,10 @@ abstract contract MultisigOnchainBase_01 is
     }
 
     /**  
-     * @dev Use this method for  execute tx
+     * @dev Use this method for execute tx
      * @param _nonce index of saved Meta Tx
      */
-    function executeOp(uint256 _nonce) public returns(bytes memory r){
+    function executeOp(uint256 _nonce) public virtual returns(bytes memory r){
         r = _execTx(_nonce);
         _hookCheckSender(_msgSender());
     }
@@ -301,7 +302,7 @@ abstract contract MultisigOnchainBase_01 is
      * @dev Use this method for  execute batch of well signed tx
      * @param _nonces index of saved Meta Tx
      */
-    function executeOp(uint256[] memory _nonces) public returns(bytes memory r){
+    function executeOp(uint256[] memory _nonces) public virtual returns(bytes memory r){
         for (uint256 i = 0; i < _nonces.length; ++ i){
             r = _execTx(_nonces[i]);
         }
