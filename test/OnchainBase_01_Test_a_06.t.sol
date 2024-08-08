@@ -66,7 +66,7 @@ contract OnchainBase_01_a_Test_06 is Test, Helper {
         
         // Second signature 
         vm.startPrank(address(12));
-        uint256 signCount = multisig_instance.signAndExecute(lastNonce, false);
+        multisig_instance.signAndExecute(lastNonce, false);
         vm.stopPrank();
 
         // check 

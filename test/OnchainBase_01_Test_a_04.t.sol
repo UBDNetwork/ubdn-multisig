@@ -63,11 +63,10 @@ contract OnchainBase_01_a_Test_04 is Test, Helper {
         vm.startPrank(address(11));
         uint256 lastNonce =  multisig_instance.createAndSign(address(erc20), 0, _data);
         vm.stopPrank();
-        MockMultisigOnchainBase_01.MultisigOnchainBase_01_Storage memory info = multisig_instance.getMultisigOnchainBase_01();
         
         // Second signature and execute
         vm.startPrank(address(12));
-        uint256 signCount = multisig_instance.signAndExecute(lastNonce, true);
+        multisig_instance.signAndExecute(lastNonce, true);
         vm.stopPrank(); 
 
         // try to execute executed operation - signer has not already signed operation

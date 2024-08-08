@@ -55,7 +55,7 @@ contract OnchainBase_01_a_Test_01 is Test, Helper {
         // attemp is fail - direct call of contract methods
         vm.prank(address(11));
         vm.expectRevert('Only Self Signed');
-        bytes memory _returnData = Address.functionCall(proxy, abi.encodeWithSignature(
+        Address.functionCall(proxy, abi.encodeWithSignature(
             "addSigner(address,uint64)",
             address(15), 0
         ));
