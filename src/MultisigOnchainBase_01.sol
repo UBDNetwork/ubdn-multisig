@@ -456,11 +456,18 @@ abstract contract MultisigOnchainBase_01 is
                && _op.signedBy.length >= _threshold
         ) 
         {
-            r = Address.functionCallWithValue(
-                _op.target, 
-                _op.metaTx, 
-                _op.value
-            );  
+            if (keccak256(bytes("")) == keccak256(_op.metaTx)) {
+                // JUST sending ether, no call methods
+                Address.sendValue(payable(_op.target), _op.value);
+            } else {
+                r = Address.functionCallWithValue(
+                    _op.target, 
+                    _op.metaTx, 
+                    _op.value
+                );
+
+            }
+              
             _op.status = TxStatus.Executed; 
         } else {
             revert ExecutionDenied(_op.status, uint8(_op.signedBy.length));
