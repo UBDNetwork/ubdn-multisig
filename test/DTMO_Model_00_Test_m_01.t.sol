@@ -64,7 +64,7 @@ contract DTMO_Model_00_Test is Test {
             //     address feeToken;     // Service fee Token
             //     uint256 feeAmount;    // Service fee amount
             // }
-            0x01,
+            0x05,
             address(erc20),
             0,
             address(erc20),
@@ -126,10 +126,11 @@ contract DTMO_Model_00_Test is Test {
         // Execute
         multisig_instance.executeOp(lastNonce);    
         assertEq(erc20.balanceOf(addr1), sendERC20Amount/2);
+        multisig_instance.geFeeManager_01_StorageInfo();
     }
 
     function test_CreateSendEth() public {
-        
+
         bytes memory _data = "";
         DeTrustMultisigOnchainModel_00 multisig_instance = DeTrustMultisigOnchainModel_00(proxy);
         // Create op
