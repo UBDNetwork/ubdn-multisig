@@ -145,4 +145,34 @@ contract OnchainBase_01_Test is Test {
         signCount = multisig_instance.signAndExecute(lastNonce, false);
         vm.stopPrank(); 
     }
+
+    function test_createOpSendETH() public {
+        bytes memory _data = ""; 
+       
+        (bool sent, bytes memory data) = proxy.call{value: sendEtherAmount*2}("");
+        assertEq(proxy.balance, sendEtherAmount*2);
+        MockMultisigOnchainBase_01 multisig_instance = MockMultisigOnchainBase_01(proxy);
+        // Create op
+        vm.startPrank(addr1);
+        uint256 lastNonce =  multisig_instance.createAndSign(addr4,sendEtherAmount, _data);
+        vm.stopPrank();
+
+        MockMultisigOnchainBase_01.MultisigOnchainBase_01_Storage memory info = multisig_instance.getMultisigOnchainBase_01();
+        assertEq(info.ops.length, lastNonce + 1);
+        assertEq(info.ops[0].metaTx, _data);
+        // if (keccak256(info.ops[0].metaTx) == keccak256(bytes(""))) {
+        //     console2.log("Just send ethere");
+        //     console2.log(string(bytes(keccak256(bytes("")))));
+        // }
+
+        // Second signature
+        vm.startPrank(addr2);
+        uint256 signCount = multisig_instance.signAndExecute(lastNonce, false);
+        vm.stopPrank(); 
+        assertEq(signCount, info.threshold);
+
+        // Execute
+        multisig_instance.executeOp(lastNonce);    
+        assertEq(addr4.balance, sendEtherAmount);
+    }
 }

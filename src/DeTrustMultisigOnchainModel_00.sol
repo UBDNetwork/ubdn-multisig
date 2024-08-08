@@ -38,4 +38,21 @@ contract DeTrustMultisigOnchainModel_00 is MultisigOnchainBase_01, FeeManager_01
         );
     }
 
+     /**  
+     * @dev Use this method for pay in advance any periods. Available only 
+     * for trust owner or inheritor
+     * @param _numberOfPeriods to pay fee in advance
+     */
+    function payFeeAdvance(uint64 _numberOfPeriods) external {
+        _chargeFee(_numberOfPeriods);
+    }
+
+    /** 
+     * @dev Use this method for  charge fee debt if exist. Available for 
+     * any address, for example platform owner
+     */
+    function chargeAnnualFee() external  {
+        _chargeFee(0);
+    }
+
 }
