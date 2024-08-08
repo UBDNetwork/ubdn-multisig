@@ -11,6 +11,7 @@ interface IPromoCodeManager {
     
     function getPrepaidPeriod(address _impl, address _creator, bytes32 _promoHash) 
         external
+        view
     returns(uint64 prePaidPeriod_);
 
 }
