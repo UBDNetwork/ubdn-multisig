@@ -95,8 +95,6 @@ contract OnchainBase_01_a_Test_13 is Test, Helper {
     function test_rejectTx2() public {
         MockMultisigOnchainBase_01 multisig_instance = MockMultisigOnchainBase_01(proxy);
         
-        MockMultisigOnchainBase_01.MultisigOnchainBase_01_Storage memory info = multisig_instance.getMultisigOnchainBase_01();
-        
         bytes memory _data = abi.encodeWithSignature(
             "transfer(address,uint256)",
             address(11), sendERC20Amount/2

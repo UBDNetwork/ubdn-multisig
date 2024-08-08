@@ -66,15 +66,19 @@ contract OnchainBase_01_a_Test_16 is Test, Helper {
         // vm.stopPrank();
 
         // sign and execute
-        //vm.prank(cosigner2);
-        //multisig_instance.signAndExecute(lastNonce, true);
-        console2.log(address(this).balance);
-        //console2.log(msg.sender, msg.sender.balance);
         vm.prank(address(this));
-        (bool sent, bytes memory data) = proxy.call{value: 2e18}("");
-        proxy.transfer(1e18);
-        // address payable a = payable(0x1804c8AB1F12E6bbf3894d4083f33e07309d1f38);
-        // a.transfer(1);
-        console2.log(proxy.balance);
+        (bool sent, bytes memory data) = proxy.call{value: 1e18}("");
+        assertEq(address(proxy).balance, 1e18);
+        assertEq(address(15).balance, 0);
+        _data = "";
+        vm.prank(cosigner1);
+        uint256 lastNonce = multisig_instance.createAndSign(address(15), 1e18, _data);
+
+        // sign and execute
+        vm.prank(cosigner2);
+        multisig_instance.signAndExecute(lastNonce, true);
+        // check balances
+        assertEq(address(15).balance, 1e18);
+        assertEq(address(proxy).balance, 0);
     }
 }

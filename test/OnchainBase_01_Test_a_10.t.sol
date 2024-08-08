@@ -57,7 +57,6 @@ contract OnchainBase_01_a_Test_10 is Test, Helper {
        
         // signer creates and sign the operation
         vm.startPrank(cosigner1);
-        uint256 expectedNonce = 0;
         multisig_instance.createAndSign(proxy, 0, _data);
         vm.stopPrank();
 
