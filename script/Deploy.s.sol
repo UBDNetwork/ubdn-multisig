@@ -10,6 +10,7 @@ import {DeTrustMultisigOnchainModel_00} from "../src/DeTrustMultisigOnchainModel
 import {DeTrustMultisigOnchainModel_01} from "../src/DeTrustMultisigOnchainModel_01.sol";
 import {DeTrustMultisigModelRegistry} from "../src/DeTrustMultisigModelRegistry.sol";
 import {UsersDeTrustMultisigRegistry} from "../src/UsersDeTrustMultisigRegistry.sol";
+import {MockPromoManager} from "../src/mock/MockPromoManager.sol";
 
 // Address:     0x7EC0BF0a4D535Ea220c6bD961e352B752906D568
 // Private key: 0x1bbde125e133d7b485f332b8125b891ea2fbb6a957e758db72e6539d46e2cd71
@@ -27,80 +28,93 @@ import {UsersDeTrustMultisigRegistry} from "../src/UsersDeTrustMultisigRegistry.
 contract DeployScript is Script {
     using stdJson for string;
 
+    struct Params {
+        address ubdn_address;   
+        uint256 neededERC20Amount;
+        address inheriter;
+        uint256 silentPeriod;
+        address fee_benefeciary;
+    }
+
+
+
     //address public constant addr1 = 0x7EC0BF0a4D535Ea220c6bD961e352B752906D568;
     address public constant addr2 = 0x4b664eD07D19d0b192A037Cfb331644cA536029d;
     address public constant addr3 = 0xd7DE4B1214bFfd5C3E9Fb8A501D1a7bF18569882;
     address public constant addr4 = 0x6F9aaAaD96180b3D6c71Fbbae2C1c5d5193A64EC;
 
+    Params p; 
+
     function run() public {
         console2.log("Chain id: %s", vm.toString(block.chainid));
         console2.log("Deployer address: %s, native balnce %s", msg.sender, msg.sender.balance);
-
+         
         // Load json with chain params
         //string memory root = vm.projectRoot();
         //string memory params_path = string.concat(vm.projectRoot(), "/script/chain_params.json");
         string memory params_json_file = vm.readFile(string.concat(vm.projectRoot(), "/script/chain_params.json"));
         string memory key;
-
+        
         // Define constructor params
-        address ubdn_address;   
+        //address ubdn_address;   
         key = string.concat(".", vm.toString(block.chainid),".ubdn_address");
         if (vm.keyExists(params_json_file, key)) 
         {
-            ubdn_address = params_json_file.readAddress(key);
+            p.ubdn_address = params_json_file.readAddress(key);
         } else {
-            ubdn_address = address(0);
+            p.ubdn_address = address(0);
         }
-        console2.log("ubdn_address: %s", ubdn_address); 
+        console2.log("ubdn_address: %s", p.ubdn_address); 
 
-        uint256 neededERC20Amount;
+        //uint256 neededERC20Amount;
         key = string.concat(".", vm.toString(block.chainid),".neededERC20Amount");
         if (vm.keyExists(params_json_file, key)) 
         {
-            neededERC20Amount = params_json_file.readUint(key);
+            p.neededERC20Amount = params_json_file.readUint(key);
         } else {
-            neededERC20Amount = 0;
+            p.neededERC20Amount = 0;
         }
-        console2.log("neededERC20Amount: %s", neededERC20Amount); 
+        console2.log("neededERC20Amount: %s", p.neededERC20Amount); 
         
-        address inheriter;
+        //address inheriter;
         key = string.concat(".", vm.toString(block.chainid),".inheriter");
         if (vm.keyExists(params_json_file, key)) 
         {
-            inheriter = params_json_file.readAddress(key);
+            p.inheriter = params_json_file.readAddress(key);
         } else {
-            inheriter = address(0);
+            p.inheriter = address(0);
         }
-        console2.log("inheriter: %s", inheriter); 
+        console2.log("inheriter: %s", p.inheriter); 
         
-        uint256 silentPeriod;
+        //uint256 silentPeriod;
         key = string.concat(".", vm.toString(block.chainid),".silentPeriod");
         if (vm.keyExists(params_json_file, key)) 
         {
-            silentPeriod = params_json_file.readUint(key);
+            p.silentPeriod = params_json_file.readUint(key);
         } else {
-            silentPeriod = 0;
+            p.silentPeriod = 0;
         }
-        console2.log("silentPeriod: %s", silentPeriod); 
+        console2.log("silentPeriod: %s", p.silentPeriod); 
 
-        address fee_benefeciary;
+        //address fee_benefeciary;
         key = string.concat(".", vm.toString(block.chainid),".fee_benefeciary");
         if (vm.keyExists(params_json_file, key)) 
         {
-            fee_benefeciary = params_json_file.readAddress(key);
+            p.fee_benefeciary = params_json_file.readAddress(key);
         } else {
-            fee_benefeciary = msg.sender;
+            p.fee_benefeciary = msg.sender;
         }
-        console2.log("fee_benefeciary: %s", fee_benefeciary); 
+        console2.log("fee_benefeciary: %s", p.fee_benefeciary); 
         
 
         //////////   Deploy   //////////////
         vm.startBroadcast();
-        DeTrustMultisigModelRegistry modelReg = new DeTrustMultisigModelRegistry(fee_benefeciary);
+        DeTrustMultisigModelRegistry modelReg = new DeTrustMultisigModelRegistry(p.fee_benefeciary);
         UsersDeTrustMultisigRegistry userReg = new UsersDeTrustMultisigRegistry();
         DeTrustMultisigFactory factory = new DeTrustMultisigFactory(address(modelReg), address(userReg));
         DeTrustMultisigOnchainModel_00 impl_00 = new DeTrustMultisigOnchainModel_00();
         DeTrustMultisigOnchainModel_01 impl_01 = new DeTrustMultisigOnchainModel_01();
+        MockPromoManager promoM = new MockPromoManager();
         vm.stopBroadcast();
         
         ///////// Pretty printing ////////////////
@@ -126,6 +140,7 @@ contract DeployScript is Script {
         console2.log("\n**DeTrustMultisigOnchainModel_01** ");
         console2.log("https://%s/address/%s#code\n", explorer_url, address(impl_01));
 
+
         console2.log("```python");
         console2.log("modelReg = DeTrustMultisigModelRegistry.at('%s')", address(modelReg));
         console2.log("userReg = UsersDeTrustMultisigRegistrygjx.at('%s')", address(userReg));
@@ -141,16 +156,31 @@ contract DeployScript is Script {
         vm.startBroadcast();
         modelReg.setModelState(
             address(impl_00),
-            DeTrustMultisigModelRegistry.TrustModel(0x03, ubdn_address, neededERC20Amount, address(0), 0)
+            DeTrustMultisigModelRegistry.TrustModel(
+                0x03, 
+                p.ubdn_address, 
+                p.neededERC20Amount, 
+                address(0), 
+                0
+            )
         );
         modelReg.setModelState(
             address(impl_01),
-             DeTrustMultisigModelRegistry.TrustModel(bytes1(0x07), ubdn_address, neededERC20Amount, ubdn_address, 22e18)
+             DeTrustMultisigModelRegistry.TrustModel(
+                bytes1(0x07), 
+                p.ubdn_address, 
+                p.neededERC20Amount, 
+                p.ubdn_address, 
+                22e18
+            )
         );
         userReg.setFactoryState(address(factory), true);
+        // init - enable PROMO
+        modelReg.setPromoCodeManager(address(promoM));
+
 
         // test transactions
-        if (inheriter != address(0)){
+        if (p.inheriter != address(0)){
             address payable proxy;
             {
                 address[] memory _inheritors = new address[](3);
@@ -172,17 +202,23 @@ contract DeployScript is Script {
                 console2.log("detrust_00 deployed at('%s')", address(proxy));
                 console2.log("https://%s/address/%s#code\n", explorer_url, address(proxy));
           
-            ////////////////////
-            //   tx_example   //
-            ////////////////////
-            IERC20(ubdn_address).transfer(proxy, 22_000e18);
+            /////////////////////////
+            //   tx_example  erc20 //
+            /////////////////////////
+            IERC20(p.ubdn_address).transfer(proxy, 22_000e18);
 
             DeTrustMultisigOnchainModel_00 multisig_instance = DeTrustMultisigOnchainModel_00(proxy);
             bytes memory _data = abi.encodeWithSignature(
                 "transfer(address,uint256)",
                 0x4b664eD07D19d0b192A037Cfb331644cA536029d, 7000e18
             );
-            multisig_instance.createAndSign(address(ubdn_address), 0, _data);
+            console2.log("createAndSign....erc20");
+            multisig_instance.createAndSign(address(p.ubdn_address), 0, _data);
+
+            // tx send ether
+            _data = "";
+            console2.log("createAndSign....send ether");
+            multisig_instance.createAndSign(address(p.ubdn_address), 1, _data);
 
         }
             

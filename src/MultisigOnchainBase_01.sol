@@ -9,11 +9,8 @@ import "@Uopenzeppelin/contracts/utils/cryptography/EIP712Upgradeable.sol";
 
 /**
  * @dev This is abstract contract with ONCHAIN multisig wallet functions
- * Upon creation the address of the heir(s) and 
- * the time (dT) of the owner’s absence(silence) are passed. When the heir 
- * applies, this time of inactivity of the owner will be checked. If it is 
- * greater than dT, then both the creator and the heir have access 
- * to the wallet's assets. 
+ * Upon creation the address of the heir(s) and  the time for each co-signer
+ * after which he(she) will be able to sign tx.  
  * 
  * !!! This is implementation contract for proxy conatract creation
  */

@@ -63,7 +63,8 @@ contract DeTrustMultisigOnchainModel_01 is MultisigOnchainBase_01, FeeManager_01
         
 
     }
-     /**
+    
+    /**
      * @dev Storage Getter for access contract state
      */
     function _getDeTrustMultisigOnchainModel_01_Storage() 
@@ -74,6 +75,10 @@ contract DeTrustMultisigOnchainModel_01 is MultisigOnchainBase_01, FeeManager_01
         }
     }
 
+    /**
+     * @dev edit silence interval after which signers will be able sign 
+     * and exec tx
+     */
     function editSilenceTime(uint64 _newPeriod) 
         external    
         onlySelfSender
@@ -82,6 +87,9 @@ contract DeTrustMultisigOnchainModel_01 is MultisigOnchainBase_01, FeeManager_01
         $.silenceTime = _newPeriod;  
     }
 
+    /**
+     * @dev Just for update checkpoint of creator activity
+     */
     function iAmAlive() external  {
         DeTrustMultisigOnchainModel_01_Storage storage $ = _getDeTrustMultisigOnchainModel_01_Storage();
         require(

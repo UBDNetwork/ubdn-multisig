@@ -11,7 +11,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @dev This is model registry for UBD DeTrust ecosystem. Contract 
- * keeps available model's addressee and validate proxy (DeTrusts)
+ * keeps available model's addresses and validate proxy (DeTrusts)
  * creation rules
  */
 contract DeTrustMultisigModelRegistry is IDeTrustModelRegistry, Ownable {
@@ -183,6 +183,10 @@ contract DeTrustMultisigModelRegistry is IDeTrustModelRegistry, Ownable {
 
     }
 
+    /**
+     * @dev Set contract that will deal with promo codes
+     * @param _contract PromoManager contract address
+     */
     function setPromoCodeManager(address _contract) external onlyOwner {
         promoCodeManager = _contract;
     }
