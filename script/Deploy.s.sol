@@ -151,7 +151,7 @@ contract DeployScript is Script {
 
         // test transactions
         if (inheriter != address(0)){
-            address proxy;
+            address payable proxy;
             {
                 address[] memory _inheritors = new address[](3);
                 _inheritors[0] = 0xDDA2F2E159d2Ce413Bd0e1dF5988Ee7A803432E3;
@@ -161,13 +161,13 @@ contract DeployScript is Script {
                 _periodOrDateArray[0] = uint64(0);
                 _periodOrDateArray[1] = uint64(2);
                 _periodOrDateArray[2] = uint64(3);
-                proxy = factory.deployProxyForTrust(
+                proxy = payable(factory.deployProxyForTrust(
                     address(impl_00), 2,
                     _inheritors,
                     _periodOrDateArray, 
                     'Universal DeTrust',
                     keccak256("PROMO")
-                );
+                ));
             }
                 console2.log("detrust_00 deployed at('%s')", address(proxy));
                 console2.log("https://%s/address/%s#code\n", explorer_url, address(proxy));

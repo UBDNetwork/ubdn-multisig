@@ -6,6 +6,9 @@ import "../MultisigOnchainBase_01.sol";
 
 contract MockMultisigOnchainBase_01 is MultisigOnchainBase_01 {
 
+    // receive() external payable  {
+    //     //emit EtherTransfer(msg.sender, msg.value);
+    // }
     /////////////////////////////////////////////////////
     /// OpenZepelin Pattern for Proxy initialize      ///
     /////////////////////////////////////////////////////

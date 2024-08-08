@@ -72,6 +72,8 @@ abstract contract MultisigOnchainBase_01 is
     event SignerChanged(address  signer, uint64 oldDate, uint64 newDate);
     event ThresholdChanged(uint8 thresholdOld, uint8 thresholdNew);
 
+    event EtherTransfer(address sender, uint256 value);
+
     /**
      * @dev Throws if called by any account other than this contract or proxy
      */
@@ -82,6 +84,13 @@ abstract contract MultisigOnchainBase_01 is
 
     constructor() {
       _disableInitializers();
+    }
+
+    /**
+     * @dev The contract should be able to receive Eth.
+     */
+    receive() external payable virtual {
+        emit EtherTransfer(msg.sender, msg.value);
     }
 
     /////////////////////////////////////////////////////
