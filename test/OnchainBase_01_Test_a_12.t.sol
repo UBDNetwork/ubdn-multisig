@@ -104,7 +104,7 @@ contract OnchainBase_01_a_Test_12 is Test, Helper {
     function test_revokeSignature2() public {
         MockMultisigOnchainBase_01 multisig_instance = MockMultisigOnchainBase_01(proxy);
         
-        MockMultisigOnchainBase_01.MultisigOnchainBase_01_Storage memory info = multisig_instance.getMultisigOnchainBase_01();
+        //MockMultisigOnchainBase_01.MultisigOnchainBase_01_Storage memory info = multisig_instance.getMultisigOnchainBase_01();
         
         bytes memory _data = abi.encodeWithSignature(
             "transfer(address,uint256)",

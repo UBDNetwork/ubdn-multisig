@@ -82,6 +82,67 @@ contract DeTrustMultisigOnchainModel_01 is MultisigOnchainBase_01, FeeManager_01
         $.silenceTime = _newPeriod;  
     }
 
+    function iAmAlive() external  {
+        DeTrustMultisigOnchainModel_01_Storage storage $ = _getDeTrustMultisigOnchainModel_01_Storage();
+        require(
+            msg.sender == getMultisigOnchainBase_01().cosigners[0].signer,
+            "Only for creator"
+        );
+        $.lastOwnerOp = uint64(block.timestamp);
+
+    }
+
+    /**  
+     * @dev Use this method for sign metaTx onchain and execute as well
+     * @param _nonce index of saved Meta Tx
+     * @param _execWhenReady if true then tx will be executed if all signatures are collected
+     */
+    function signAndExecute(uint256 _nonce, bool _execWhenReady) 
+        public
+        override 
+        returns(uint256 signedByCount) 
+    {
+        _chargeFee(0);
+        signedByCount = super.signAndExecute(_nonce, _execWhenReady);
+    }
+
+    /**  
+     * @dev Use this method for execute tx
+     * @param _nonce index of saved Meta Tx
+     */
+    function executeOp(uint256 _nonce) public override returns(bytes memory r){
+        _chargeFee(0);
+        r = super.executeOp(_nonce);
+    }
+
+    /**  
+     * @dev Use this method for  execute batch of well signed tx
+     * @param _nonces index of saved Meta Tx
+     */
+    function executeOp(uint256[] memory _nonces) public override returns(bytes memory r){
+        _chargeFee(0);
+        r = super.executeOp(_nonces);
+    }   
+
+
+    /**  
+     * @dev Use this method for pay in advance any periods. Available only 
+     * for trust owner or inheritor
+     * @param _numberOfPeriods to pay fee in advance
+     */
+    function payFeeAdvance(uint64 _numberOfPeriods) external onlySelfSender{
+        _chargeFee(_numberOfPeriods);
+    }
+
+    /** 
+     * @dev Use this method for  charge fee debt if exist. Available for 
+     * any address, for example platform owner
+     */
+    function chargeAnnualFee() external  {
+        _chargeFee(0);
+    }
+   
+    
     ///////////////////////////////////////////////////////
     // Overide som from parent for change model behavior //
     ///////////////////////////////////////////////////////

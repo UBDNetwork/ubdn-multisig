@@ -17,6 +17,7 @@ contract MockLocker {
         external
         view
     returns(uint256 total, uint256 availableNow) {
+        _user;
         return (TOTAL_LOCKED_VALUE, AVAILABLE_LOCKED_VALUE);
     }
 }

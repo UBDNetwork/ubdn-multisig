@@ -38,7 +38,7 @@ contract DeTrustMultisigOnchainModel_00 is MultisigOnchainBase_01, FeeManager_01
         );
     }
 
-     /**  
+    /**  
      * @dev Use this method for sign metaTx onchain and execute as well
      * @param _nonce index of saved Meta Tx
      * @param _execWhenReady if true then tx will be executed if all signatures are collected
@@ -49,7 +49,7 @@ contract DeTrustMultisigOnchainModel_00 is MultisigOnchainBase_01, FeeManager_01
         returns(uint256 signedByCount) 
     {
         _chargeFee(0);
-        super.signAndExecute(_nonce, _execWhenReady);
+        signedByCount = super.signAndExecute(_nonce, _execWhenReady);
     }
 
     /**  
@@ -58,7 +58,7 @@ contract DeTrustMultisigOnchainModel_00 is MultisigOnchainBase_01, FeeManager_01
      */
     function executeOp(uint256 _nonce) public override returns(bytes memory r){
         _chargeFee(0);
-        super.executeOp(_nonce);
+        r = super.executeOp(_nonce);
     }
 
     /**  
@@ -67,7 +67,7 @@ contract DeTrustMultisigOnchainModel_00 is MultisigOnchainBase_01, FeeManager_01
      */
     function executeOp(uint256[] memory _nonces) public override returns(bytes memory r){
         _chargeFee(0);
-        super.executeOp(_nonces);
+        r = super.executeOp(_nonces);
     }   
 
 

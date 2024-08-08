@@ -68,6 +68,9 @@ contract OnchainBase_01_a_Test_16 is Test, Helper {
         // sign and execute
         vm.prank(address(this));
         (bool sent, bytes memory data) = proxy.call{value: 1e18}("");
+        // suppress solc warnings 
+        sent;
+        data;
         assertEq(address(proxy).balance, 1e18);
         assertEq(address(15).balance, 0);
         _data = "";

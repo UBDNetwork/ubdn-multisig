@@ -85,12 +85,12 @@ contract OffChainFlowTest_m_01 is Test {
         erc20.transfer(proxy, sendERC20Amount);
     }
 
-    function test_zeroRegistry() public {
+    function test_zeroRegistry() public view{
         assertEq(address(factory.modelRegistry()), address(0));
         assertEq(address(factory.trustRegistry()), address(0));
     }
 
-    function test_proxyAddress() public {
+    function test_proxyAddress() public view{
         console2.log("Implementation   addr: %s", address(impl_00));
         console2.log("Proxy for     impl_00: %s", proxy);
         assertFalse(address(impl_00) == proxy);
