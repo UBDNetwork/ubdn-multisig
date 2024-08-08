@@ -77,7 +77,7 @@ contract OnchainBase_01_a_Test_14 is Test, Helper {
         vm.expectRevert('New Threshold more than co-signers count');
         multisig_instance.signAndExecute(lastNonce, true);
 
-        //
+
         _data = abi.encodeWithSignature(
             "changeThreshold(uint8)",
             3
@@ -88,7 +88,7 @@ contract OnchainBase_01_a_Test_14 is Test, Helper {
         // nonce = 1
         vm.stopPrank();
 
-        // sign and execute - expect revert
+        // sign and execute
         vm.prank(cosigner2);
         multisig_instance.signAndExecute(lastNonce, true);
         info = multisig_instance.getMultisigOnchainBase_01();
@@ -111,5 +111,24 @@ contract OnchainBase_01_a_Test_14 is Test, Helper {
         info = multisig_instance.getMultisigOnchainBase_01();
         // not executed operation
         assertEq(uint8(info.ops[2].status), uint8(MultisigOnchainBase_01.TxStatus.WaitingForSigners));
+
+        // try to set threshold = 0
+        _data = abi.encodeWithSignature(
+            "changeThreshold(uint8)",
+            0
+        );
+        vm.startPrank(cosigner1);
+        lastNonce = multisig_instance.createAndSign(proxy, 0, _data);
+        // nonce = 1
+        vm.stopPrank();
+
+        // sign
+        vm.prank(cosigner2);
+        multisig_instance.signAndExecute(lastNonce, false);
+
+        // sign and execute
+        vm.prank(cosigner3);
+        vm.expectRevert('No zero threshold');
+        multisig_instance.signAndExecute(lastNonce, true);
     }
 }

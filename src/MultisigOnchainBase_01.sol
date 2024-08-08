@@ -173,6 +173,7 @@ abstract contract MultisigOnchainBase_01 is
 
         //require(_newThreshold >= $.cosigners.length, "New Threshold less than co-signers count");
         require(_newThreshold <= $.cosigners.length, "New Threshold more than co-signers count");
+        require(_newThreshold > 0 , "No zero threshold");
         emit ThresholdChanged(uint8($.cosigners.length), _newThreshold);
         $.threshold = _newThreshold;
 
