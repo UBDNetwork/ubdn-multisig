@@ -91,6 +91,7 @@ contract OnchainBase_01_a_Test_01 is Test, Helper {
 
         // signer only signs tx
         vm.prank(address(12));
+        vm.expectEmit();
         emit MultisigOnchainBase_01.SignatureAdded(expectedNonce, address(12), 2);
         uint256 signedByCount = multisig_instance.signAndExecute(lastNonce, false);
         info = multisig_instance.getMultisigOnchainBase_01();
@@ -114,8 +115,13 @@ contract OnchainBase_01_a_Test_01 is Test, Helper {
         signedByCount = multisig_instance.signAndExecute(lastNonce, true);
 
         // signer signs and executes tx
+        uint8 newSignerCount = 5;
         vm.prank(address(13));
+        vm.expectEmit();
         emit MultisigOnchainBase_01.SignatureAdded(expectedNonce, address(13), 3);
+        emit MultisigOnchainBase_01.SignerAdded(
+            MultisigOnchainBase_01.Signer(address(15),0),
+            newSignerCount);
         emit MultisigOnchainBase_01.TxExecuted(expectedNonce, address(13));
         signedByCount = multisig_instance.signAndExecute(lastNonce, true);
         info = multisig_instance.getMultisigOnchainBase_01();

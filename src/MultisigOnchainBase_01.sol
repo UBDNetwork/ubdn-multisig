@@ -54,7 +54,6 @@ abstract contract MultisigOnchainBase_01 is
     //error OwnableUnauthorizedAccount(address account);
     
     error ActionDeniedForThisStatus(TxStatus status);
-    error NeedMoreValidSignatures(uint8 needMore);
     error CoSignerAlreadyExist(address signer);
     error CoSignerNotValid(address signer);
     error CoSignerNotExist(address signer);
@@ -180,7 +179,7 @@ abstract contract MultisigOnchainBase_01 is
         //require(_newThreshold >= $.cosigners.length, "New Threshold less than co-signers count");
         require(_newThreshold <= $.cosigners.length, "New Threshold more than co-signers count");
         require(_newThreshold > 0 , "No zero threshold");
-        emit ThresholdChanged(uint8($.cosigners.length), _newThreshold);
+        emit ThresholdChanged($.threshold, _newThreshold);
         $.threshold = _newThreshold;
 
     }

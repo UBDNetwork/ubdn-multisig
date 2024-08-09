@@ -73,6 +73,7 @@ contract OnchainBase_01_a_Test_11 is Test, Helper {
         // signer creates and sign the operation
         vm.startPrank(cosigner1);
         uint256 expectedNonce = 0;
+        vm.expectEmit();
         emit MultisigOnchainBase_01.SignatureAdded(expectedNonce, address(11), 1);
         multisig_instance.createAndSign(proxy, 0, _data);
         // nonce = 0
@@ -80,6 +81,7 @@ contract OnchainBase_01_a_Test_11 is Test, Helper {
 
         // sign and execute
         vm.prank(cosigner2);
+        vm.expectEmit();
         emit MultisigOnchainBase_01.SignerChanged(
             info.cosigners[1].signer, 
             info.cosigners[1].validFrom, 

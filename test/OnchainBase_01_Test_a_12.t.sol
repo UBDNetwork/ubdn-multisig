@@ -76,6 +76,7 @@ contract OnchainBase_01_a_Test_12 is Test, Helper {
 
         // signer of operation revokes the signature
         vm.prank(cosigner1);
+        vm.expectEmit();
         emit MultisigOnchainBase_01.SignatureRevoked(
             lastNonce,
             cosigner1,
@@ -87,6 +88,7 @@ contract OnchainBase_01_a_Test_12 is Test, Helper {
 
         // signer of operation revokes  the signature and reject the operation
         vm.prank(cosigner2);
+        vm.expectEmit();
         emit MultisigOnchainBase_01.SignatureRevoked(
             lastNonce,
             cosigner2,

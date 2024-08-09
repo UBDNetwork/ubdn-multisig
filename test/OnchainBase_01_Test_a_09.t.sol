@@ -68,6 +68,7 @@ contract OnchainBase_01_a_Test_09 is Test, Helper {
         // signer creates and sign the operation
         vm.startPrank(address(11));
         uint256 expectedNonce = 0;
+        vm.expectEmit();
         emit MultisigOnchainBase_01.SignatureAdded(0, address(11), 1);
         multisig_instance.createAndSign(proxy, 0, _data);
         // nonce = 0
@@ -75,6 +76,7 @@ contract OnchainBase_01_a_Test_09 is Test, Helper {
 
         // sign and execute
         vm.prank(address(12));
+        vm.expectEmit();
         emit MultisigOnchainBase_01.SignerRemoved(MultisigOnchainBase_01.Signer(cosigner3, 0), uint8(3));
         multisig_instance.signAndExecute(0, true);
         info = multisig_instance.getMultisigOnchainBase_01();
@@ -133,6 +135,8 @@ contract OnchainBase_01_a_Test_09 is Test, Helper {
             address(11), sendERC20Amount/2
         );
         vm.prank(cosigner3);
+        expectedNonce = 3;
+        vm.expectEmit();
         emit MultisigOnchainBase_01.SignatureAdded(expectedNonce, cosigner3, 1);
         lastNonce = multisig_instance.createAndSign(address(erc20), 0, _data);
         // nonce = 3

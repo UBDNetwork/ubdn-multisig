@@ -90,6 +90,8 @@ contract OnchainBase_01_a_Test_14 is Test, Helper {
 
         // sign and execute
         vm.prank(cosigner2);
+        vm.expectEmit();
+        emit MultisigOnchainBase_01.ThresholdChanged(info.threshold, uint8(3));
         multisig_instance.signAndExecute(lastNonce, true);
         info = multisig_instance.getMultisigOnchainBase_01();
         assertEq(info.threshold, uint8(3));

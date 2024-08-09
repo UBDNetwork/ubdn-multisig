@@ -82,6 +82,7 @@ contract OnchainBase_01_a_Test_13 is Test, Helper {
 
         // cosigner rejects tx
         vm.prank(cosigner2);
+        vm.expectEmit();
         emit MultisigOnchainBase_01.TxRejected(
             lastNonce,
             cosigner2);
