@@ -70,7 +70,7 @@ contract OnchainBase_01_a_Test_09 is Test, Helper {
         uint256 expectedNonce = 0;
         vm.expectEmit();
         emit MultisigOnchainBase_01.SignatureAdded(0, address(11), 1);
-        multisig_instance.createAndSign(proxy, 0, _data);
+        uint256 lastNonce = multisig_instance.createAndSign(proxy, 0, _data);
         // nonce = 0
         vm.stopPrank();
 
@@ -78,7 +78,7 @@ contract OnchainBase_01_a_Test_09 is Test, Helper {
         vm.prank(address(12));
         vm.expectEmit();
         emit MultisigOnchainBase_01.SignerRemoved(MultisigOnchainBase_01.Signer(cosigner3, 0), uint8(3));
-        multisig_instance.signAndExecute(0, true);
+        multisig_instance.signAndExecute(lastNonce, true);
         info = multisig_instance.getMultisigOnchainBase_01();
         assertEq(info.cosigners.length, 3);
         assertEq(info.cosigners[0].signer, cosigner1);
@@ -118,7 +118,7 @@ contract OnchainBase_01_a_Test_09 is Test, Helper {
         );
 
         vm.startPrank(cosigner1);
-        uint256 lastNonce =  multisig_instance.createAndSign(proxy, 0, _data);
+        lastNonce =  multisig_instance.createAndSign(proxy, 0, _data);
         // nonce = 2
         vm.stopPrank();
 

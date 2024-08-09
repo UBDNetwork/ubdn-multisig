@@ -92,9 +92,10 @@ contract OnchainBase_01_a_Test_14 is Test, Helper {
         vm.prank(cosigner2);
         vm.expectEmit();
         emit MultisigOnchainBase_01.ThresholdChanged(info.threshold, uint8(3));
-        multisig_instance.signAndExecute(lastNonce, true);
+        uint256 signedByCount = multisig_instance.signAndExecute(lastNonce, true);
         info = multisig_instance.getMultisigOnchainBase_01();
         assertEq(info.threshold, uint8(3));
+        assertEq(signedByCount, 2);
 
         _data = abi.encodeWithSignature(
             "transfer(address,uint256)",

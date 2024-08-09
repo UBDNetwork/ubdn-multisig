@@ -76,9 +76,10 @@ contract OnchainBase_01_a_Test_13 is Test, Helper {
 
         // signer of operation revokes the signature
         vm.prank(cosigner1);
-        multisig_instance.revokeSignature(lastNonce, false);
+        uint256 signedByCount = multisig_instance.revokeSignature(lastNonce, false);
         info = multisig_instance.getMultisigOnchainBase_01();
         assertEq(info.ops[lastNonce].signedBy.length, 0);
+        assertEq(signedByCount, 0);
 
         // cosigner rejects tx
         vm.prank(cosigner2);
