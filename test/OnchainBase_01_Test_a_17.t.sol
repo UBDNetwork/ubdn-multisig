@@ -81,5 +81,24 @@ contract OnchainBase_01_a_Test_17 is Test, Helper {
         MockMultisigOnchainBase_01.MultisigOnchainBase_01_Storage memory info = multisig_instance.getMultisigOnchainBase_01();
         assertEq(info.ops.length, 10);
 
+        MultisigOnchainBase_01.Operation memory op = multisig_instance.getMultisigOpByNonce(0);
+        assertEq(op.signedBy.length, 2);
+        assertEq(op.target, address(erc20));
+        assertEq(uint8(op.status), uint8(MultisigOnchainBase_01.TxStatus.Executed));
+    }
+
+    function test_view() public view {
+        MockMultisigOnchainBase_01 multisig_instance = MockMultisigOnchainBase_01(proxy);
+        (uint8 thr, MultisigOnchainBase_01.Signer[] memory sgs) = multisig_instance.getMultisigSettings();
+        assertEq(thr, uint8(2));
+        assertEq(sgs.length, 4);
+
+        bytes memory _data = abi.encodeWithSignature(
+            "balanceOf(address)",
+            address(proxy)
+        );
+        bytes memory _returnData = multisig_instance.staticCallOp(address(erc20), _data);
+        uint256 balance = abi.decode(_returnData, (uint256));
+        assertEq(balance, sendERC20Amount);
     }
 }
