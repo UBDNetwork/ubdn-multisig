@@ -27,7 +27,8 @@ contract DeTrustMultisigFactory {
     
     
     event NewTrust(address Creator, address Model, address Trust, string Name);
-     /**
+    
+    /**
      * @dev Pass Model's and User's Registry contract addresses.  Zero addresses
      * are possible as well but in that case proxy for **ANY** implementation 
      * would be able to create.
@@ -47,9 +48,8 @@ contract DeTrustMultisigFactory {
      *   create detrust for somebody. But only `msg.sender` address will checked
      * in model creation rules.
      * @param _periodOrDateArray array periods in seconds after wich inheritor will get acces to.
-     *   for each inheritor
-     * funds (in case DeTrusModel_00).
      * @param _name simple string name for trust. 
+     * @param _promoHash - hashed promocode value
      */
     function deployProxyForTrust(
         address _implAddress, 
@@ -81,9 +81,6 @@ contract DeTrustMultisigFactory {
             }
         }
 
-
-
-        // TODO Checks of implementation, caller and calldata(?)
         proxy = Clones.clone(_implAddress);
 
         // INIT

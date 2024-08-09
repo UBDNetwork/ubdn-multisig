@@ -119,14 +119,17 @@ abstract contract FeeManager_01 is  Initializable,  ContextUpgradeable
     /**
      * @dev Returns full FeeManager info
      */
-    function geFeeManager_01_StorageInfo() external pure returns(FeeManager_01_Storage memory feeManager){
+    function geFeeManager_01_StorageInfo() 
+        public 
+        pure 
+    returns(FeeManager_01_Storage memory feeManager){
         feeManager = _getFeeManager_01_StorageStorage();
     }
 
     /**
      * @dev Returns true during payed period
      */
-    function isAnnualFeePayed() external view returns(bool isPayed){
+    function isAnnualFeePayed() public view returns(bool isPayed){
         FeeManager_01_Storage memory $ = _getFeeManager_01_StorageStorage();
         isPayed = $.fee.payedTill >= uint64(block.timestamp); 
     }

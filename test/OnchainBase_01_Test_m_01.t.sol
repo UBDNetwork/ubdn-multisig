@@ -150,6 +150,9 @@ contract OnchainBase_01_Test is Test {
         bytes memory _data = ""; 
        
         (bool sent, bytes memory data) = proxy.call{value: sendEtherAmount*2}("");
+        // suppress solc warnings
+        sent;
+        data;
         assertEq(proxy.balance, sendEtherAmount*2);
         MockMultisigOnchainBase_01 multisig_instance = MockMultisigOnchainBase_01(proxy);
         // Create op
