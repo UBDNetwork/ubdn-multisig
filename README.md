@@ -1,8 +1,22 @@
-# UBD Network De Trust Multisig
+# UBD Network DeTrust Multisig
 
-## Usage
+## Main Contracts
+- **DeTrustMultisigModelRegistry** - storing available templates for creating multisig. Charge creation fee (or monitoring the conditions - available UBDN balance);  
+
+- **UsersDeTrustMultisigRegistry** - storing the list of multisigs in which the address is a signatory or creator;
+- **DeTrustMultisigFactory** - the contract will create new multisigs from templates (mimmal EIP-1167 proxy to template implementations);  
+
+- **DeTrustMultisigOnchainModel_00** - a model for creating multisigs indicating the date and time of the start of the powers of each signatory;  
+- **DeTrustMultisigOnchainModel_01** - a model for creating multisigs with a “quiet period” (no transactions of the creator of the multisig) - the powers of the signatory come at the end of this period;  
+- **DeTrustMultisigOffchainModel_01** - a model for creating offchain (like Gnosis) multisig "quiet period". _During the implementation, the customer decided to implement onchain multisig models (meta transactions are created and signed in the contract). As a result, this model has been tested only partially._
 
 ### Build
+```shell
+$ # First build
+$ git clone git@gitlab.com:ubd2/ubdn-multisig.git
+$ cd ubdn-multisig
+$ git submodule update --init --recursive
+```
 
 ```shell
 $ forge build
@@ -10,93 +24,20 @@ $ forge build
 
 ### Test
 
-To run tests in local sandbox
+To run tests in local sandbox first please insatll [foundry](https://book.getfoundry.sh/getting-started/installation)  
 ```shell
-$ forge test --match-contract DeTrustModel_01_ExecutiveTest*
-```
-To run tests for forked chain  
-```shell
-$ source .env
-$ forge test --match-contract UniV3TestETH_Trust_* -vv --fork-url  https://mainnet.infura.io/v3/$WEB3_INFURA_PROJECT_ID --etherscan-api-key $ETHERSCAN_TOKEN
+$ forge test
 ```
 
-
-### Gas Snapshots
-
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-### Deploy 
+### Deployments 
 #### Sepolia
 ```shell
 $ forge script script/Deploy.s.sol:DeployScript --rpc-url sepolia  --account ttwo --sender 0xDDA2F2E159d2Ce413Bd0e1dF5988Ee7A803432E3 --broadcast --verify  --etherscan-api-key $ETHERSCAN_TOKEN
 
+$ # Script for geting hash for staroge addresses
 $ forge script script/GetStorageSlot.s.sol:GetStorageSlot
 ```
 
-```shell
-$ forge script script/Deploy-BalanceChecker.s.sol:DeployScriptBalanceChecker --rpc-url sepolia  --account ttwo --sender 0xDDA2F2E159d2Ce413Bd0e1dF5988Ee7A803432E3 --broadcast --verify
-```
-```shell
-$ forge  create --rpc-url sepolia  --account ttwo   --etherscan-api-key $ETHERSCAN_TOKEN  --verify  src/DeTrustModel_02_Executive.sol:DeTrustModel_02_Executive
-
-$ forge verify-contract 0xCe05ABB733072Bb81bc16802120729f910299Bc9  ./src/DeTrustModel_02_Executive.sol:DeTrustModel_02_Executive  --num-of-optimizations 200 --compiler-version 0.8.23 --etherscan-api-key ${ETHERSCAN_TOKEN} --chain 11155111 
-
-$ cast  send 0x663BeF18503572FC29d7db80cb79e44A9DBC4672  "setModelState(address,(bytes1,address,uint256,address,uint256))" "0xCe05ABB733072Bb81bc16802120729f910299Bc9" "(0x07,0x7ce7abb7F8794dCe67FB2dc4d8eBf2F033472730,1000000000000000000,0x7ce7abb7F8794dCe67FB2dc4d8eBf2F033472730,22000000000000000000)" --rpc-url sepolia  --account ttwo
-```
-
-### Verify
-```shell
-$ forge verify-contract 0x0e332Ee59191CD43a035fB705e82e53934cd2014  ./src/DeTrustFactory.sol:DeTrustFactory  --num-of-optimizations 200 --compiler-version 0.8.23 --etherscan-api-key ${ETHERSCAN_TOKEN} --chain 11155111 --constructor-args $(cast abi-encode "constructor(address modelReg, address userReg)" 0x1b813d6F365294535e4aB10c4547EcD05B39bE07 0xde03361b17c0cCa0A8E3a9864283CF9f46dA3f40)
-
-$ forge verify-contract 0x1b813d6F365294535e4aB10c4547EcD05B39bE07  ./src/DeTrustModelRegistry.sol:DeTrustModelRegistry   --num-of-optimizations 200 --compiler-version 0.8.23 --etherscan-api-key ${ETHERSCAN_TOKEN} --chain 11155111
-
-$ forge verify-contract 0xde03361b17c0cCa0A8E3a9864283CF9f46dA3f40  ./src/UsersDeTrustRegistry.sol:UsersDeTrustRegistry   --num-of-optimizations 200 --compiler-version 0.8.23 --etherscan-api-key ${ETHERSCAN_TOKEN} --chain 11155111
-
-$ forge verify-contract 0x3A2E0c04c5007E9fcD637935E7B5Ee6d9eA906C0  ./src/DeTrustModel_00.sol:DeTrustModel_00   --num-of-optimizations 200 --compiler-version 0.8.23 --etherscan-api-key ${ETHERSCAN_TOKEN} --chain 11155111
-
-$ forge verify-contract 0xd6591B614Fac2BB4AE48FE11195995e2bBD81d19  ./src/DeTrustProxy.sol:DeTrustProxy  --num-of-optimizations 200 --compiler-version 0.8.23 --etherscan-api-key ${ETHERSCAN_TOKEN} --chain 11155111 --constructor-args $(cast abi-encode "constructor(address, address, bytes32, uint64, string)" 	0x3A2E0c04c5007E9fcD637935E7B5Ee6d9eA906C0 0xDDA2F2E159d2Ce413Bd0e1dF5988Ee7A803432E3 0x405787fa12a823e0f2b7631cc41b3ba8828b3321ca811111fa75cd3aa3bb5ace 100 InitialTrust)
-
-$ forge verify-contract 0xCe232a897E4d46d251f247Bc286eBAac60CeB94D  ./src/BalanceChecker.sol:BalanceChecker   --num-of-optimizations 200 --compiler-version 0.8.23 --etherscan-api-key ${ETHERSCAN_TOKEN} --chain 11155111 --constructor-args $(cast abi-encode "constructor(address token, address locker)" 0x7ce7abb7F8794dCe67FB2dc4d8eBf2F033472730 0xCCF7028D83D0b6eD8e68124Efe07E5FaD1C4E17F)
-```
-### Cast
-
-```shell
-## Latest block number
-$ cast block --rpc-url blast_sepolia | grep number
-
-$ cast send 0xd6591B614Fac2BB4AE48FE11195995e2bBD81d19 "transferNative(address,uint256)" "0xDDA2F2E159d2Ce413Bd0e1dF5988Ee7A803432E3" "100" --rpc-url sepolia --account ttwo 
-
-
-$ cast send 0xd6591B614Fac2BB4AE48FE11195995e2bBD81d19 "transferERC20(address,address,uint256)" "0x7ce7abb7F8794dCe67FB2dc4d8eBf2F033472730" "0xDDA2F2E159d2Ce413Bd0e1dF5988Ee7A803432E3" "100" --rpc-url sepolia --account ttwo 
-
-$ # ERC20 topup
-$ cast send 0x7ce7abb7F8794dCe67FB2dc4d8eBf2F033472730 "transfer(address,uint256)" "0xd6591B614Fac2BB4AE48FE11195995e2bBD81d19" "100000" --rpc-url sepolia --account ttwo 
-
-$ # ERC20 Balance
-$ cast abi-decode "balanceOf(address)(uint256)" $(cast call 0x7ce7abb7F8794dCe67FB2dc4d8eBf2F033472730 "balanceOf(address)" "0xDDA2F2E159d2Ce413Bd0e1dF5988Ee7A803432E3" --rpc-url sepolia )
-
-$ # Native Balance
-$ cast balance 0xDDA2F2E159d2Ce413Bd0e1dF5988Ee7A803432E3 --rpc-url sepolia
-
-$ # Register model
-$ cast send 0x1b813d6F365294535e4aB10c4547EcD05B39bE07 "setModelState(address,(bytes1,address,uint256,address))" "0x3A2E0c04c5007E9fcD637935E7B5Ee6d9eA906C0" "(0x03, 0xCe232a897E4d46d251f247Bc286eBAac60CeB94D, 100000000000000000000, 0x0000000000000000000000000000000000000000)" --rpc-url sepolia --account ttwo 
-
-$ # UBDN balance
-$ cast from-wei $(cast call 0x7ce7abb7F8794dCe67FB2dc4d8eBf2F033472730 "balanceOf(address)" "0xDDA2F2E159d2Ce413Bd0e1dF5988Ee7A803432E3" --rpc-url sepolia)
-
-$ #keccak256(abi.encode( uint256(keccak256("ubdn.storage.DeTrustModel_01_Executive")) - 1)) & ~bytes32(uint256(0xff) )
-$ cast keccak 
-```
 
 ### Help
 
@@ -106,16 +47,3 @@ $ anvil --help
 $ cast --help
 ```
 
-### Add forge to existing Brownie project
-```shell
-$ forge init --force
-$ forge install OpenZeppelin/openzeppelin-contracts
-$ forge install OpenZeppelin/openzeppelin-contracts-upgradeable.git
-$ forge buld
-```
-### First build
-```shell
-git clone git@gitlab.com:ubd2/ubdn-multisig.git
-cd multisig
-git submodule update --init --recursive
-```

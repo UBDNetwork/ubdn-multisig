@@ -183,14 +183,16 @@ contract DeployScript is Script {
         if (p.inheriter != address(0)){
             address payable proxy;
             {
-                address[] memory _inheritors = new address[](3);
+                address[] memory _inheritors = new address[](4);
                 _inheritors[0] = 0xDDA2F2E159d2Ce413Bd0e1dF5988Ee7A803432E3;
-                _inheritors[1] = addr2;
+                _inheritors[1] = 0x6ddb97905c9Eb0A41e6400E1cD31A063214a4068;
                 _inheritors[2] = addr3;
-                uint64[] memory _periodOrDateArray = new uint64[](3);
+                _inheritors[3] = address(this);
+                uint64[] memory _periodOrDateArray = new uint64[](4);
                 _periodOrDateArray[0] = uint64(0);
                 _periodOrDateArray[1] = uint64(2);
                 _periodOrDateArray[2] = uint64(3);
+                _periodOrDateArray[3] = uint64(4);
                 proxy = payable(factory.deployProxyForTrust(
                     address(impl_00), 2,
                     _inheritors,
