@@ -55,6 +55,7 @@ contract FeeManager_01_a_Test_01 is Test {
     function test_chargeFee2() public {
         uint64 period = 3;
         erc20.transfer(address(feeM), feeAmount * period);
+        assertEq(erc20.balanceOf(address(feeM)), feeAmount * period);
 
         MockFeeManager_01.FeeManager_01_Storage memory info = feeM.geFeeManager_01_StorageInfo();
         vm.startPrank(address(1));
@@ -65,5 +66,24 @@ contract FeeManager_01_a_Test_01 is Test {
         info = feeM.geFeeManager_01_StorageInfo();
         assertEq(info.fee.payedTill, payedTillBefore + feeM.ANNUAL_FEE_PERIOD() * period);
         assertEq(feeM.isAnnualFeePayed(), true);
+        assertEq(erc20.balanceOf(address(11)), feeAmount * period);
+        assertEq(erc20.balanceOf(address(feeM)), 0);
+
+        //try to charge fee again - time has not come
+        vm.prank(address(1));
+        feeM.chargeFee(0);
+        info = feeM.geFeeManager_01_StorageInfo();
+        assertEq(info.fee.payedTill, payedTillBefore + feeM.ANNUAL_FEE_PERIOD() * period);
+
+        vm.warp( 5 * 365 days);
+        payedTillBefore = info.fee.payedTill;
+        assertEq(feeM.isAnnualFeePayed(), false);
+        erc20.transfer(address(feeM), feeAmount);
+        feeM.chargeFee(0);
+        info = feeM.geFeeManager_01_StorageInfo();
+        assertEq(info.fee.payedTill, payedTillBefore + feeM.ANNUAL_FEE_PERIOD());
+
+
+
     }
 }
