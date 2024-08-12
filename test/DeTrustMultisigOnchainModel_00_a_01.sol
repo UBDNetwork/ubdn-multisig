@@ -62,6 +62,7 @@ contract DeTrustMultisigOnchainModel_00_a_01 is Test {
         }
     }
 
+    // pay fee in deploy time and make operation without fee payment
     function test_proxy() public {
         assertEq(address(factory.modelRegistry()), address(modelReg));
         assertEq(address(factory.trustRegistry()), address(userReg));
