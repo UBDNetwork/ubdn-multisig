@@ -220,7 +220,7 @@ contract DeployScript is Script {
             // tx send ether
             _data = "";
             console2.log("createAndSign....send ether");
-            multisig_instance.createAndSign(address(p.ubdn_address), 1, _data);
+            multisig_instance.createAndSign(addr3, 1, _data);
 
         }
             
