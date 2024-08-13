@@ -186,9 +186,12 @@ contract DeTrustMultisigOnchainModel_01 is MultisigOnchainBase_01, FeeManager_01
         returns(bool valid)
     {
         // !!!! Main signer validity rule  is here
-        DeTrustMultisigOnchainModel_01_Storage memory $ = _getDeTrustMultisigOnchainModel_01_Storage();
-        //valid = _cosigner.validFrom  + $.silenceTime <= block.timestamp;
-        valid = $.lastOwnerOp  + $.silenceTime <= block.timestamp;
+        MultisigOnchainBase_01_Storage memory parent = getMultisigOnchainBase_01();
+        // this check is not for owner
+        if (parent.cosigners[0].signer != _cosigner.signer){
+            DeTrustMultisigOnchainModel_01_Storage memory $ = _getDeTrustMultisigOnchainModel_01_Storage();
+            valid = $.lastOwnerOp  + $.silenceTime <= block.timestamp;
+        }
     }
 
     // Overiding hook for update Last Owner Op
