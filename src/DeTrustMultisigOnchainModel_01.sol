@@ -191,6 +191,8 @@ contract DeTrustMultisigOnchainModel_01 is MultisigOnchainBase_01, FeeManager_01
         if (parent.cosigners[0].signer != _cosigner.signer){
             DeTrustMultisigOnchainModel_01_Storage memory $ = _getDeTrustMultisigOnchainModel_01_Storage();
             valid = $.lastOwnerOp  + $.silenceTime <= block.timestamp;
+        } else {
+            valid = true;
         }
     }
 
