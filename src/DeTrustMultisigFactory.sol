@@ -89,7 +89,8 @@ contract DeTrustMultisigFactory {
             _threshold, _inheritors, _periodOrDateArray
             ,feep.feeToken, feep.feeAmount, feep.feeBeneficiary, feep.prePaiedPeriod
         );
-        Address.functionCallWithValue(proxy, initCallData, msg.value);
+        //Address.functionCallWithValue(proxy, initCallData, msg.value);
+        Address.functionCallWithValue(proxy, initCallData, 0);
 
 
         // Register trust in Trust registry

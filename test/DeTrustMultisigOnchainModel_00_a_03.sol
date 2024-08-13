@@ -12,6 +12,7 @@ import {MockERC20} from "../src/mock/MockERC20.sol";
 import {DeTrustMultisigModelRegistry} from "../src/DeTrustMultisigModelRegistry.sol";
 import {UsersDeTrustMultisigRegistry} from "../src/UsersDeTrustMultisigRegistry.sol";
 
+// eth fee
 contract DeTrustMultisigOnchainModel_00_a_03 is Test {
     uint256 public sendEtherAmount = 1e18;
     uint256 public sendERC20Amount = 2e18;
@@ -32,6 +33,7 @@ contract DeTrustMultisigOnchainModel_00_a_03 is Test {
     uint64[] periodOrDateArray = new uint64[](5);
     bytes32  promoHash = 0x0;
     address payable proxy;
+    address payable proxy1;
 
     MockERC20 public erc20;
 
@@ -49,7 +51,8 @@ contract DeTrustMultisigOnchainModel_00_a_03 is Test {
             address(impl_00),
             DeTrustMultisigModelRegistry.TrustModel(0x07, address(erc20), requiredAmount , address(0), feeAmount)
         );
-        console.logBytes1(modelReg.isModelEnable(address(impl_00), address(1)));
+        assertEq(modelReg.getModelsList().length, 1);
+        assertEq(modelReg.getModelsList()[0], address(impl_00));
 
         userReg.setFactoryState(address(factory), true);
         assertEq(
@@ -64,14 +67,11 @@ contract DeTrustMultisigOnchainModel_00_a_03 is Test {
 
         // add balance for msg.sender
         address payable _receiver = payable(address(11));
-        _receiver.transfer(10*feeAmount);
+        _receiver.transfer(3 * feeAmount);
 
-        
-        console2.log(address(this));
-        console2.log(address(factory));
         erc20.transfer(address(11), requiredAmount);
         vm.startPrank(address(11));
-        proxy = payable(factory.deployProxyForTrust{value: feeAmount}(
+        proxy = payable(factory.deployProxyForTrust{value: 3 * feeAmount}(
             address(impl_00), 
             threshold,
             inheritors,
@@ -82,196 +82,56 @@ contract DeTrustMultisigOnchainModel_00_a_03 is Test {
         vm.stopPrank();
 
         assertEq(beneficiary.balance, feeAmount);
+        assertEq(address(11).balance, 2 * feeAmount); // check eth back
 
+        // non-supported model
+        vm.expectRevert('Model not approved');
+        proxy1 = payable(factory.deployProxyForTrust{value: 3 * feeAmount}(
+            address(1), 
+            threshold,
+            inheritors,
+            periodOrDateArray,
+            detrustName,     //_name
+            promoHash
+        ));
     }
 
-    // charge fee - signAndExecute
+    // charge fee - signAndExecute - eth fee
     function test_proxy1() public {
-        console2.log('hello');
-        // get proxy info
-        /*DeTrustMultisigOnchainModel_00 multisig_instance = DeTrustMultisigOnchainModel_00(proxy);
-        DeTrustMultisigOnchainModel_00.MultisigOnchainBase_01_Storage memory info = multisig_instance.getMultisigOnchainBase_01();
-        DeTrustMultisigOnchainModel_00.FeeManager_01_Storage memory infoFee = multisig_instance.geFeeManager_01_StorageInfo();*/
-        // topup proxy
-        /*erc20.transfer(address(proxy), 3 * feeAmount);
-        address payable _receiver = payable(proxy);
-        _receiver.transfer(sendEtherAmount);
-
-        // move time
-        vm.warp(block.timestamp + 3 * multisig_instance.ANNUAL_FEE_PERIOD());
-        // withdraw ether
-        uint64 payedTillBefore = infoFee.fee.payedTill;
-        bytes memory _data = "";
-        vm.prank(address(1));
-        // create and sign operation
-        uint256 lastNonce = multisig_instance.createAndSign(address(15), 1e18, _data);
-
-        // sign and execute
-        vm.prank(address(2));
-        multisig_instance.signAndExecute(lastNonce, true);
-        // check balances
-        assertEq(address(15).balance, 1e18);
-        assertEq(address(proxy).balance, 0);
-        info = multisig_instance.getMultisigOnchainBase_01();
-        infoFee = multisig_instance.geFeeManager_01_StorageInfo();
-
-        assertEq(infoFee.fee.payedTill, payedTillBefore + 3 * multisig_instance.ANNUAL_FEE_PERIOD());
-        assertEq(info.ops.length, 1);
-        assertEq(info.ops[0].signedBy.length, 2);
-    }
-
-    // charge fee - executeOp
-    function test_proxy2() public {
-
         // get proxy info
         DeTrustMultisigOnchainModel_00 multisig_instance = DeTrustMultisigOnchainModel_00(proxy);
         DeTrustMultisigOnchainModel_00.MultisigOnchainBase_01_Storage memory info = multisig_instance.getMultisigOnchainBase_01();
         DeTrustMultisigOnchainModel_00.FeeManager_01_Storage memory infoFee = multisig_instance.geFeeManager_01_StorageInfo();
         // topup proxy
-        erc20.transfer(address(proxy), 3 * feeAmount);
-        address payable _receiver = payable(proxy);
-        _receiver.transfer(sendEtherAmount);
-
-        // withdraw ether
-        uint64 payedTillBefore = infoFee.fee.payedTill;
-        bytes memory _data = "";
-        vm.prank(address(1));
-        // create and sign operation
-        uint256 lastNonce = multisig_instance.createAndSign(address(15), 1e18, _data);
-
-        // sign and execute
-        vm.prank(address(2));
-        multisig_instance.signAndExecute(lastNonce, false);
-        
-        // move time
-        vm.warp(block.timestamp + 3 * multisig_instance.ANNUAL_FEE_PERIOD());
-        vm.prank(address(3));
-        multisig_instance.executeOp(lastNonce);
-
-        // check balances
-        assertEq(address(15).balance, 1e18);
-        assertEq(address(proxy).balance, 0);
-        info = multisig_instance.getMultisigOnchainBase_01();
-        infoFee = multisig_instance.geFeeManager_01_StorageInfo();
-
-        assertEq(infoFee.fee.payedTill, payedTillBefore + 3 * multisig_instance.ANNUAL_FEE_PERIOD());
-        assertEq(info.ops.length, 1);
-        assertEq(info.ops[0].signedBy.length, 2);
-    }
-
-    // charge fee - payFeeAdvance
-    function test_proxy3() public {
-
-        // get proxy info
-        DeTrustMultisigOnchainModel_00 multisig_instance = DeTrustMultisigOnchainModel_00(proxy);
-        DeTrustMultisigOnchainModel_00.MultisigOnchainBase_01_Storage memory info = multisig_instance.getMultisigOnchainBase_01();
-        DeTrustMultisigOnchainModel_00.FeeManager_01_Storage memory infoFee = multisig_instance.geFeeManager_01_StorageInfo();
-        // topup proxy
-        erc20.transfer(address(proxy), 2 * feeAmount);
-        
-        // withdraw ether
-        uint64 payedTillBefore = infoFee.fee.payedTill;
-        bytes memory _data = abi.encodeWithSignature(
-            "payFeeAdvance(uint64)",
-            2
-        );
-        vm.prank(address(1));
-        uint256 lastNonce = multisig_instance.createAndSign(address(proxy), 0, _data);
-        uint256 balanceBefore = erc20.balanceOf(beneficiary);
-
-        vm.prank(address(2));
-        multisig_instance.signAndExecute(lastNonce, true);
-
-        // check balances
-        info = multisig_instance.getMultisigOnchainBase_01();
-        infoFee = multisig_instance.geFeeManager_01_StorageInfo();
-
-        assertEq(infoFee.fee.payedTill, payedTillBefore + 2 * multisig_instance.ANNUAL_FEE_PERIOD());
-        assertEq(info.ops.length, 1);
-        assertEq(erc20.balanceOf(beneficiary), balanceBefore + 2 * feeAmount);
-    }
-
-    // charge fee - chargeAnnualFee
-    function test_proxy4() public {
-
-        // get proxy info
-        DeTrustMultisigOnchainModel_00 multisig_instance = DeTrustMultisigOnchainModel_00(proxy);
-        DeTrustMultisigOnchainModel_00.MultisigOnchainBase_01_Storage memory info = multisig_instance.getMultisigOnchainBase_01();
-        DeTrustMultisigOnchainModel_00.FeeManager_01_Storage memory infoFee = multisig_instance.geFeeManager_01_StorageInfo();
-        // topup proxy
-        erc20.transfer(address(proxy), feeAmount);
-        
-        // withdraw ether
-        uint64 payedTillBefore = infoFee.fee.payedTill;
-        uint256 balanceBefore = erc20.balanceOf(beneficiary);
-        vm.prank(address(1));
-        vm.warp(multisig_instance.ANNUAL_FEE_PERIOD() + 1);
-
-        multisig_instance.chargeAnnualFee();
-        // check balances
-        info = multisig_instance.getMultisigOnchainBase_01();
-        infoFee = multisig_instance.geFeeManager_01_StorageInfo();
-
-        assertEq(infoFee.fee.payedTill, payedTillBefore + multisig_instance.ANNUAL_FEE_PERIOD());
-        assertEq(info.ops.length, 0);
-        assertEq(erc20.balanceOf(beneficiary), balanceBefore + feeAmount);
-
-        // try again
-        payedTillBefore = infoFee.fee.payedTill;
-        balanceBefore = erc20.balanceOf(beneficiary);
-        vm.prank(address(1));
-        multisig_instance.chargeAnnualFee();
-        // check balances
-        info = multisig_instance.getMultisigOnchainBase_01();
-        infoFee = multisig_instance.geFeeManager_01_StorageInfo();
-        assertEq(infoFee.fee.payedTill, payedTillBefore);
-        assertEq(erc20.balanceOf(beneficiary), balanceBefore);
-    }
-
-    // charge fee - executeOp batch
-    function test_proxy5() public {
-
-        // get proxy info
-        DeTrustMultisigOnchainModel_00 multisig_instance = DeTrustMultisigOnchainModel_00(proxy);
-        DeTrustMultisigOnchainModel_00.MultisigOnchainBase_01_Storage memory info = multisig_instance.getMultisigOnchainBase_01();
-        DeTrustMultisigOnchainModel_00.FeeManager_01_Storage memory infoFee = multisig_instance.geFeeManager_01_StorageInfo();
-        // topup proxy
-        erc20.transfer(address(proxy), feeAmount);
         erc20.transfer(address(proxy), sendERC20Amount);
-        
-        // withdraw ether
-        uint64 payedTillBefore = infoFee.fee.payedTill;
-        uint256 balanceBefore = erc20.balanceOf(beneficiary);
-        uint256 balanceBefore11 = erc20.balanceOf(address(11));
-        console2.log(erc20.balanceOf(address(11)));
+        address payable _receiver = payable(proxy);
+        _receiver.transfer(3 * feeAmount);
         bytes memory _data = abi.encodeWithSignature(
             "transfer(address,uint256)",
-            address(11), sendERC20Amount/2
+            address(11), sendERC20Amount
         );
-        uint256[] memory nonces = new uint256[](2);
-        uint256 lastNonce;
 
-        for (uint256 i = 0; i < 2; ++ i) {
-            // signer creates and sign the operation
-            vm.startPrank(address(1));
-            lastNonce = multisig_instance.createAndSign(address(erc20), 0, _data);
-            nonces[i] = lastNonce;
-            vm.stopPrank();
+        // move time
+        vm.warp(block.timestamp + multisig_instance.ANNUAL_FEE_PERIOD());
+        uint64 payedTillBefore = infoFee.fee.payedTill;
+        uint256 balanceBeforeEth = address(beneficiary).balance;
+        uint256 balanceBeforeERC20 = erc20.balanceOf(address(11));
+        vm.prank(address(1));
+        // create and sign operation
+        uint256 lastNonce = multisig_instance.createAndSign(address(erc20), 0, _data);
 
-            // sign and execute
-            vm.prank(address(2));
-            multisig_instance.signAndExecute(lastNonce, false);
-        }
-        vm.warp(multisig_instance.ANNUAL_FEE_PERIOD() + 1);
-
-        multisig_instance.executeOp(nonces);
+        // sign and execute
+        vm.prank(address(2));
+        multisig_instance.signAndExecute(lastNonce, true);
         // check balances
+        assertEq(erc20.balanceOf(address(11)), balanceBeforeERC20 + sendERC20Amount);
+        assertEq(address(proxy).balance, 2 * feeAmount);
+        assertEq(address(beneficiary).balance, balanceBeforeEth + feeAmount);
         info = multisig_instance.getMultisigOnchainBase_01();
         infoFee = multisig_instance.geFeeManager_01_StorageInfo();
 
         assertEq(infoFee.fee.payedTill, payedTillBefore + multisig_instance.ANNUAL_FEE_PERIOD());
-        assertEq(info.ops.length, 2);
-        assertEq(erc20.balanceOf(beneficiary), balanceBefore + feeAmount);
-        assertEq(erc20.balanceOf(address(11)), balanceBefore11 + sendERC20Amount);*/
+        assertEq(info.ops.length, 1);
+        assertEq(info.ops[0].signedBy.length, 2);
     }
 }
