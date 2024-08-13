@@ -41,16 +41,16 @@ contract DeTrustMultisigOnchainModel_01 is MultisigOnchainBase_01, FeeManager_01
        
     ) public initializer
     {
-        require(_validFrom[0] == 0, "Owner must be always able to sign");
+        // require(_validFrom[0] == 0, "Owner must be always able to sign");
         // In this model all  signers can sign transcation only after dT since last owner operation 
         // Consider to take this dT upon init from second _validFrom array element
         DeTrustMultisigOnchainModel_01_Storage storage $ = _getDeTrustMultisigOnchainModel_01_Storage();
         $.lastOwnerOp = uint64(block.timestamp);
         $.silenceTime = _validFrom[1];
         // Set all signers validFrom to same dT
-        for (uint256 i = 2; i < _validFrom.length -1; ++ i) {
+        /*for (uint256 i = 2; i < _validFrom.length -1; ++ i) {
             _validFrom[i] = _validFrom[1];
-        }
+        }*/
 
         __MultisigOnchainBase_01_init(
             _threshold, _cosignersAddresses, _validFrom
@@ -149,7 +149,17 @@ contract DeTrustMultisigOnchainModel_01 is MultisigOnchainBase_01, FeeManager_01
     function chargeAnnualFee() external  {
         _chargeFee(0);
     }
-   
+
+    /**
+     * @dev Returns full Multisig info
+     */
+    function getDeTrustMultisigOnchainModel_01() 
+        public 
+        pure
+        returns(DeTrustMultisigOnchainModel_01_Storage memory msig)
+    {
+        msig = _getDeTrustMultisigOnchainModel_01_Storage();
+    }
     
     ///////////////////////////////////////////////////////
     // Overide som from parent for change model behavior //
