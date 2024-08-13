@@ -11,6 +11,7 @@ import {MockERC20} from "../src/mock/MockERC20.sol";
 
 import {DeTrustMultisigModelRegistry} from "../src/DeTrustMultisigModelRegistry.sol";
 import {UsersDeTrustMultisigRegistry} from "../src/UsersDeTrustMultisigRegistry.sol";
+import {MultisigOnchainBase_01} from "../src/MultisigOnchainBase_01.sol";
 
 contract DeTrustMultisigOnchainModel_01_a_01 is Test {
     uint256 public sendEtherAmount = 1e18;
@@ -21,6 +22,7 @@ contract DeTrustMultisigOnchainModel_01_a_01 is Test {
     string public badDetrustName = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
     address beneficiary = address(100);
     uint8 threshold = 2;
+    address owner = address(1);
     error AddressInsufficientBalance(address account);
 
     DeTrustMultisigFactory  public factory;
@@ -129,37 +131,58 @@ contract DeTrustMultisigOnchainModel_01_a_01 is Test {
         assertEq(userReg.getInheritorTrusts(address(5))[0], proxy);
 
         // check lastOwnerOp and silentPeriod
-        DeTrustMultisigOnchainModel_01.DeTrustMultisigOnchainModel_01_Storage memory infoTrust = multisig_instance.getDeTrustMultisigOnchainModel_01();
+        DeTrustMultisigOnchainModel_01.DeTrustMultisigOnchainModel_01_Storage memory infoTrust = 
+            multisig_instance.getDeTrustMultisigOnchainModel_01();
 
         assertEq(infoTrust.lastOwnerOp, currentTime);
         assertEq(infoTrust.silenceTime, silentPeriod);
         
         // topup trust
-        /*erc20.transfer(proxy, sendERC20Amount);
+        erc20.transfer(proxy, sendERC20Amount);
         address payable _receiver = payable(proxy);
         _receiver.transfer(sendEtherAmount);
 
         // move time
         vm.warp(block.timestamp + 100);
-        // withdraw ether
+        // withdraw ether - signer is not owner, now is silent period. Wait revert!
         uint64 payedTillBefore = infoFee.fee.payedTill;
         bytes memory _data = "";
-        vm.prank(address(1));
+        vm.prank(address(2));
         // create and sign operation
+        vm.expectRevert(
+            abi.encodeWithSelector(MultisigOnchainBase_01.CoSignerNotValid.selector, address(2))
+        );
         uint256 lastNonce = multisig_instance.createAndSign(address(15), 1e18, _data);
 
-        // sign and execute
+        // try to create op by owner
+        vm.prank(address(1));
+        currentTime = uint64(block.timestamp);
+        lastNonce = multisig_instance.createAndSign(address(15), 1e18, _data);
+        infoTrust = multisig_instance.getDeTrustMultisigOnchainModel_01();
+        assertEq(infoTrust.lastOwnerOp, currentTime);
+
+
+        // sign and execute - in silent period. Wait revert!
+        vm.prank(address(2));
+        vm.expectRevert(
+            abi.encodeWithSelector(MultisigOnchainBase_01.CoSignerNotValid.selector, address(2))
+        );
+        multisig_instance.signAndExecute(lastNonce, true);
+
+        vm.warp(block.timestamp + silentPeriod + 1);
         vm.prank(address(2));
         multisig_instance.signAndExecute(lastNonce, true);
+        // wait silent period. Try to sign and execute op
+
         // check balances
         assertEq(address(15).balance, 1e18);
         assertEq(address(proxy).balance, 0);
         info = multisig_instance.getMultisigOnchainBase_01();
         infoFee = multisig_instance.geFeeManager_01_StorageInfo();
 
+        // fee is not charged again. Very early!
         assertEq(infoFee.fee.payedTill, payedTillBefore);
         assertEq(info.ops.length, 1);
-        assertEq(info.ops[0].signedBy.length, 2);*/
-
+        assertEq(info.ops[0].signedBy.length, 2);
     }
 }
