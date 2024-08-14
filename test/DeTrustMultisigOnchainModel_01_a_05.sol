@@ -6,14 +6,14 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import "forge-std/console.sol";
 
 import {DeTrustMultisigFactory} from "../src/DeTrustMultisigFactory.sol";
-import {DeTrustMultisigOnchainModel_00} from "../src/DeTrustMultisigOnchainModel_00.sol";
+import {DeTrustMultisigOnchainModel_01} from "../src/DeTrustMultisigOnchainModel_01.sol";
 import {MockERC20} from "../src/mock/MockERC20.sol";
 
 import {DeTrustMultisigModelRegistry} from "../src/DeTrustMultisigModelRegistry.sol";
 import {UsersDeTrustMultisigRegistry} from "../src/UsersDeTrustMultisigRegistry.sol";
 
 
-contract DeTrustMultisigOnchainModel_00_a_04 is Test {
+contract DeTrustMultisigOnchainModel_01_a_05 is Test {
     uint256 public sendEtherAmount = 1e18;
     uint256 public sendERC20Amount = 2e18;
     uint256 public feeAmount = 5e18;
@@ -26,7 +26,7 @@ contract DeTrustMultisigOnchainModel_00_a_04 is Test {
     error AddressInsufficientBalance(address account);
 
     DeTrustMultisigFactory  public factory;
-    DeTrustMultisigOnchainModel_00 public impl_00;
+    DeTrustMultisigOnchainModel_01 public impl_01;
     UsersDeTrustMultisigRegistry public userReg;
     DeTrustMultisigModelRegistry public modelReg;
     address[] inheritors = new address[](5);
@@ -39,7 +39,7 @@ contract DeTrustMultisigOnchainModel_00_a_04 is Test {
 
     receive() external payable virtual {}
     function setUp() public {
-        impl_00 = new DeTrustMultisigOnchainModel_00();
+        impl_01 = new DeTrustMultisigOnchainModel_01();
         erc20 = new MockERC20('UBDN token', 'UBDN');
         modelReg = new DeTrustMultisigModelRegistry(beneficiary); 
         userReg = new UsersDeTrustMultisigRegistry();
@@ -48,15 +48,15 @@ contract DeTrustMultisigOnchainModel_00_a_04 is Test {
         // with fee in eth to create trust + need balance
         vm.prank(address(this));
         modelReg.setModelState(
-            address(impl_00),
+            address(impl_01),
             DeTrustMultisigModelRegistry.TrustModel(0x01, address(0), 0 , address(0), 0)
         );
         assertEq(modelReg.getModelsList().length, 1);
-        assertEq(modelReg.getModelsList()[0], address(impl_00));
+        assertEq(modelReg.getModelsList()[0], address(impl_01));
 
         userReg.setFactoryState(address(factory), true);
         assertEq(
-            uint8(modelReg.isModelEnable(address(impl_00), address(1))), 
+            uint8(modelReg.isModelEnable(address(impl_01), address(1))), 
             uint8(0x01)
         );
         // prepare data to deploy proxy
@@ -71,7 +71,7 @@ contract DeTrustMultisigOnchainModel_00_a_04 is Test {
 
         vm.startPrank(address(11));
         proxy = payable(factory.deployProxyForTrust(
-            address(impl_00), 
+            address(impl_01), 
             threshold,
             inheritors,
             periodOrDateArray,
@@ -92,9 +92,9 @@ contract DeTrustMultisigOnchainModel_00_a_04 is Test {
         ));
 
         // get proxy info
-        DeTrustMultisigOnchainModel_00 multisig_instance = DeTrustMultisigOnchainModel_00(proxy);
-        DeTrustMultisigOnchainModel_00.MultisigOnchainBase_01_Storage memory info = multisig_instance.getMultisigOnchainBase_01();
-        DeTrustMultisigOnchainModel_00.FeeManager_01_Storage memory infoFee = multisig_instance.geFeeManager_01_StorageInfo();
+        DeTrustMultisigOnchainModel_01 multisig_instance = DeTrustMultisigOnchainModel_01(proxy);
+        DeTrustMultisigOnchainModel_01.MultisigOnchainBase_01_Storage memory info = multisig_instance.getMultisigOnchainBase_01();
+        DeTrustMultisigOnchainModel_01.FeeManager_01_Storage memory infoFee = multisig_instance.geFeeManager_01_StorageInfo();
         // topup proxy
         erc20.transfer(address(proxy), sendERC20Amount);
         bytes memory _data = abi.encodeWithSignature(
@@ -105,6 +105,7 @@ contract DeTrustMultisigOnchainModel_00_a_04 is Test {
         // move time
         vm.warp(block.timestamp + multisig_instance.ANNUAL_FEE_PERIOD() + 1000);
         uint64 payedTillBefore = infoFee.fee.payedTill;
+        uint256 balanceBeforeEth = address(beneficiary).balance;
         uint256 balanceBeforeERC20 = erc20.balanceOf(address(11));
         vm.prank(address(1));
         // create and sign operation

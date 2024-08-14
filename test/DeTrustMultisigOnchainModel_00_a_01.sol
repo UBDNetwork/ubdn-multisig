@@ -11,6 +11,7 @@ import {MockERC20} from "../src/mock/MockERC20.sol";
 
 import {DeTrustMultisigModelRegistry} from "../src/DeTrustMultisigModelRegistry.sol";
 import {UsersDeTrustMultisigRegistry} from "../src/UsersDeTrustMultisigRegistry.sol";
+import {MultisigOnchainBase_01} from "../src/MultisigOnchainBase_01.sol";
 
 contract DeTrustMultisigOnchainModel_00_a_01 is Test {
     uint256 public sendEtherAmount = 1e18;
@@ -48,7 +49,7 @@ contract DeTrustMultisigOnchainModel_00_a_01 is Test {
             address(impl_00),
             DeTrustMultisigModelRegistry.TrustModel(0x05, address(0), 0, address(erc20), feeAmount)
         );
-        console.logBytes1(modelReg.isModelEnable(address(impl_00), address(1)));
+        // console.logBytes1(modelReg.isModelEnable(address(impl_00), address(1)));
 
         userReg.setFactoryState(address(factory), true);
         assertEq(
@@ -60,6 +61,8 @@ contract DeTrustMultisigOnchainModel_00_a_01 is Test {
             inheritors[i - 1] =  address(i);
             periodOrDateArray[i - 1] = 0;
         }
+        //setup silent period for address(5)
+        periodOrDateArray[4] = 100000;
     }
 
     // pay fee in deploy time and make operation without fee payment
@@ -94,7 +97,6 @@ contract DeTrustMultisigOnchainModel_00_a_01 is Test {
 
         // add balance for msg.sender
         erc20.transfer(address(11), feeAmount);
-        console2.log(erc20.balanceOf(address(11)));
         vm.startPrank(address(11));
         erc20.approve(address(modelReg), feeAmount);
         uint256 balanceBefore = erc20.balanceOf(beneficiary); // fee beneficiary balance
@@ -153,7 +155,21 @@ contract DeTrustMultisigOnchainModel_00_a_01 is Test {
         // create and sign operation
         uint256 lastNonce = multisig_instance.createAndSign(address(15), 1e18, _data);
 
-        // sign and execute
+        // non-cosigner tries to add the signature
+        vm.prank(address(10));
+        vm.expectRevert(
+            abi.encodeWithSelector(MultisigOnchainBase_01.CoSignerNotExist.selector, address(10))
+        );
+        multisig_instance.signAndExecute(lastNonce, true);
+
+        // cosigner is not ready to sign
+        vm.prank(address(5));
+        vm.expectRevert(
+            abi.encodeWithSelector(MultisigOnchainBase_01.CoSignerNotValid.selector, address(5))
+        );
+        multisig_instance.signAndExecute(lastNonce, true);
+
+        // sign and execute - cosigner
         vm.prank(address(2));
         multisig_instance.signAndExecute(lastNonce, true);
         // check balances
