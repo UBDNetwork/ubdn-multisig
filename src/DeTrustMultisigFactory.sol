@@ -99,5 +99,13 @@ contract DeTrustMultisigFactory {
         }
         emit NewTrust(msg.sender, _implAddress, proxy, _name);
     }
+
+    function getMinHoldUBDNAmount() external view returns (uint256) {
+        if (address(modelRegistry) != address(0)){
+            return modelRegistry.minHoldUBDNAmount();
+        } else {
+            return 0;
+        }
+    }
     
 }

@@ -84,6 +84,7 @@ contract DeTrustMultisigOnchainModel_01_a_02 is Test {
         ));
         vm.stopPrank();
         deployTime = uint64(block.timestamp);
+        balanceBefore;
     }
 
     // check update lastOwnerDate and using silentTime

@@ -31,6 +31,7 @@ contract DeTrustMultisigModelRegistry is IDeTrustModelRegistry, Ownable {
     mapping(address => TrustModel) public approvedModels;
     address[] public modelsList;
     address public promoCodeManager;
+    uint256 public minHoldUBDNAmount = 1024e18;  // Just value for project starts
 
     event ModelChanged(address Model);
     event ModelRemoved(address Model);
@@ -189,5 +190,14 @@ contract DeTrustMultisigModelRegistry is IDeTrustModelRegistry, Ownable {
      */
     function setPromoCodeManager(address _contract) external onlyOwner {
         promoCodeManager = _contract;
+    }
+
+    /**
+     * @dev Decrease minHoldUBDNAmount value
+     * @param _newValue New value
+     */
+    function setPromoCodeManager(uint256 _newValue) external onlyOwner {
+        require(minHoldUBDNAmount > _newValue,"Only decrease is possible");
+        minHoldUBDNAmount = _newValue;
     }
 }

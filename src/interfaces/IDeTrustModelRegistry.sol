@@ -51,5 +51,7 @@ interface IDeTrustModelRegistry {
             address feeBeneficiary_,
             uint64 prePaiedPeriod_);
 
+    function minHoldUBDNAmount() external view returns(uint256);
+
    
 }

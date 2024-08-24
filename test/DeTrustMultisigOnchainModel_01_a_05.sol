@@ -123,5 +123,6 @@ contract DeTrustMultisigOnchainModel_01_a_05 is Test {
         assertEq(infoFee.fee.payedTill, payedTillBefore);
         assertEq(info.ops.length, 1);
         assertEq(info.ops[0].signedBy.length, 2);
+        balanceBeforeEth;
     }
 }
