@@ -27,7 +27,11 @@ contract MockFeeManager_01 is FeeManager_01 {
         _chargeFee(_numberOfPeriods);
     }
 
-    function feeDebtPeriodsNumber(uint64 _lastPayedDate, uint64 _debtDate) external view returns(uint64 number) {
+    function feeDebtPeriodsNumber(uint64 _lastPayedDate, uint64 _debtDate) 
+        external 
+        pure 
+        returns(uint64 number) 
+    {
         number = _feeDebtPeriodsNumber(_lastPayedDate, _debtDate);
     }
 }

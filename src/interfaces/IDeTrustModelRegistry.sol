@@ -51,7 +51,10 @@ interface IDeTrustModelRegistry {
             address feeBeneficiary_,
             uint64 prePaiedPeriod_);
 
-    function minHoldUBDNAmount() external view returns(uint256);
+    function getMinHoldInfo() 
+        external 
+        view 
+        returns (uint256 holdAmount, address holdToken);
 
    
 }

@@ -31,7 +31,8 @@ contract DeTrustMultisigModelRegistry is IDeTrustModelRegistry, Ownable {
     mapping(address => TrustModel) public approvedModels;
     address[] public modelsList;
     address public promoCodeManager;
-    uint256 public minHoldUBDNAmount = 1024e18;  // Just value for project starts
+    uint256 public minHoldAmount = 1024e18;  // Just value for project starts
+    address public minHoldAddress;
 
     event ModelChanged(address Model);
     event ModelRemoved(address Model);
@@ -140,7 +141,12 @@ contract DeTrustMultisigModelRegistry is IDeTrustModelRegistry, Ownable {
         return modelsList;
     } 
 
-   
+    function getMinHoldInfo() external view 
+        returns (uint256 a, address holdToken)
+    {
+        a = minHoldAmount;
+        holdToken = minHoldAddress;
+    }
 
      /////////////////////////
     ///  Admin functions  ///
@@ -192,12 +198,20 @@ contract DeTrustMultisigModelRegistry is IDeTrustModelRegistry, Ownable {
         promoCodeManager = _contract;
     }
 
+    
     /**
-     * @dev Decrease minHoldUBDNAmount value
+     * @dev Set address of holding asset
      * @param _newValue New value
      */
-    function setPromoCodeManager(uint256 _newValue) external onlyOwner {
-        require(minHoldUBDNAmount > _newValue,"Only decrease is possible");
-        minHoldUBDNAmount = _newValue;
+    function setMinHoldAddress(address _newValue) external onlyOwner {
+        minHoldAddress = _newValue;
+    } 
+    /**
+     * @dev Decrease minHoldAmount value
+     * @param _newValue New value
+     */
+    function setMinHoldAmount(uint256 _newValue) external onlyOwner {
+        require(minHoldAmount > _newValue,"Only decrease is possible");
+        minHoldAmount = _newValue;
     }
 }

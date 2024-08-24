@@ -100,12 +100,13 @@ contract DeTrustMultisigFactory {
         emit NewTrust(msg.sender, _implAddress, proxy, _name);
     }
 
-    function getMinHoldUBDNAmount() external view returns (uint256) {
+    function getMinHoldInfo() external view returns (uint256, address) {
         if (address(modelRegistry) != address(0)){
-            return modelRegistry.minHoldUBDNAmount();
+            return modelRegistry.getMinHoldInfo();
         } else {
-            return 0;
+            return (0, address(0));
         }
     }
+
     
 }

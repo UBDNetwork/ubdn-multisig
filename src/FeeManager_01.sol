@@ -5,6 +5,7 @@ pragma solidity 0.8.26;
 import {ContextUpgradeable, Initializable} from "@Uopenzeppelin/contracts/utils/ContextUpgradeable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "./interfaces/IDeTrustFactory.sol";
 
 /**
  * @dev This is abstract contract for manage fee in inheritors
@@ -19,13 +20,13 @@ abstract contract FeeManager_01 is  Initializable,  ContextUpgradeable
         address feeToken;
         uint64  payedTill;
         address feeBeneficiary;
-        uint64  freeHoldPeriod;
-        address factory;
     }
 
     /// @custom:storage-location erc7201:ubdn.storage.DeTrustMultisigModel_01
     struct FeeManager_01_Storage {
         Fee fee;
+        uint64  freeHoldPeriod;
+        address factory;
     }
 
     uint64 public constant ANNUAL_FEE_PERIOD = 365 days;
@@ -87,8 +88,8 @@ abstract contract FeeManager_01 is  Initializable,  ContextUpgradeable
         $.fee.feeAmount = _feeAmount;
         $.fee.feeBeneficiary = _feeBeneficiary;
         $.fee.payedTill = uint64(block.timestamp) + ANNUAL_FEE_PERIOD + _feePrepaidPeriod;
-        $.fee.factory = msg.sender;
-        $.fee.freeHoldPeriod = _feePrepaidPeriod;
+        $.factory = msg.sender;
+        $.freeHoldPeriod = _feePrepaidPeriod;
     }
     ///////////////////////////////////////////////////////////////////////////////////
 
@@ -136,6 +137,24 @@ abstract contract FeeManager_01 is  Initializable,  ContextUpgradeable
         isPayed = $.fee.payedTill >= uint64(block.timestamp); 
     }
 
+    function checkMinHoldRules(address[] calldata _holders) 
+        public 
+        view 
+        returns(bool)
+    {
+        uint256 currentHoldBalance;
+        (uint256 amt, address adr) = _getMinHoldInfo();
+        for (uint256 i = 0; i < _holders.length; ++i) {
+            currentHoldBalance += IERC20(adr).balanceOf(_holders[i]);
+        }
+        if (currentHoldBalance >= amt) {
+            return true;
+        } else {
+            return false;
+        }
+
+    }
+
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -176,5 +195,10 @@ abstract contract FeeManager_01 is  Initializable,  ContextUpgradeable
         if (_lastPayedDate  < _debtDate) {
             number = (_debtDate - _lastPayedDate) / ANNUAL_FEE_PERIOD;
         }
+    }
+
+    function _getMinHoldInfo() internal view returns (uint256 amt, address adr) {
+        FeeManager_01_Storage storage $ = _getFeeManager_01_StorageStorage();
+        (amt, adr) = IDeTrustFactory($.factory).getMinHoldInfo();
     }
 }
