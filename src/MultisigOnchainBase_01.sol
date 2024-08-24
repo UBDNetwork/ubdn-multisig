@@ -377,6 +377,18 @@ abstract contract MultisigOnchainBase_01 is
         MultisigOnchainBase_01_Storage storage $ = _getMultisigOnchainBase_01_Storage();
         op = $.ops[_nonce];
     } 
+
+    function getMultisigLastNonce()  
+        public 
+        view 
+        returns(uint256 nonce)
+    {
+        MultisigOnchainBase_01_Storage storage $ = _getMultisigOnchainBase_01_Storage();
+        nonce = $.ops.length;
+        // Actually it is not nonce  yet but array length
+        require(nonce > 0, "No Operations yet"); 
+        nonce -= 1;
+    }
     ////////////////////////////////////////////
     ///////   Multisig internal functions    ///
     ////////////////////////////////////////////

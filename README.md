@@ -10,6 +10,7 @@
 - **DeTrustMultisigOnchainModel_01** - a model for creating multisigs with a “quiet period” (no transactions of the creator of the multisig) - the powers of the signatory come at the end of this period;  
 - **DeTrustMultisigOffchainModel_01** - a model for creating offchain (like Gnosis) multisig "quiet period". _During the implementation, the customer decided to implement onchain multisig models (meta transactions are created and signed in the contract). As a result, this model has been tested only partially._
 
+[Detrust Proxy Creation Sequence Diagram](./proxyCraeteSequenceDiagram.md)
 ### Build
 ```shell
 $ # First build

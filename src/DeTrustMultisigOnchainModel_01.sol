@@ -47,10 +47,7 @@ contract DeTrustMultisigOnchainModel_01 is MultisigOnchainBase_01, FeeManager_01
         DeTrustMultisigOnchainModel_01_Storage storage $ = _getDeTrustMultisigOnchainModel_01_Storage();
         $.lastOwnerOp = uint64(block.timestamp);
         $.silenceTime = _validFrom[1];
-        // Set all signers validFrom to same dT
-        /*for (uint256 i = 2; i < _validFrom.length -1; ++ i) {
-            _validFrom[i] = _validFrom[1];
-        }*/
+        
 
         __MultisigOnchainBase_01_init(
             _threshold, _cosignersAddresses, _validFrom

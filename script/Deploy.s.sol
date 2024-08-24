@@ -171,7 +171,7 @@ contract DeployScript is Script {
                 p.ubdn_address, 
                 p.neededERC20Amount, 
                 p.ubdn_address, 
-                22e18
+                2e18
             )
         );
         userReg.setFactoryState(address(factory), true);
@@ -181,7 +181,9 @@ contract DeployScript is Script {
 
         // test transactions
         if (p.inheriter != address(0)){
+            IERC20(p.ubdn_address).approve(address(modelReg), 22_000e18);
             address payable proxy;
+            address payable proxy01;
             {
                 address[] memory _inheritors = new address[](4);
                 _inheritors[0] = 0xDDA2F2E159d2Ce413Bd0e1dF5988Ee7A803432E3;
@@ -200,30 +202,69 @@ contract DeployScript is Script {
                     'Universal DeTrust',
                     keccak256("PROMO")
                 ));
+                IERC20(p.ubdn_address).transfer(proxy, 22_000e18);
             }
-                console2.log("detrust_00 deployed at('%s')", address(proxy));
-                console2.log("https://%s/address/%s#code\n", explorer_url, address(proxy));
+            console2.log("detrust_00 deployed at('%s')", address(proxy));
+            console2.log("https://%s/address/%s#code\n", explorer_url, address(proxy));
+
+            {
+                address[] memory _inheritors = new address[](4);
+                _inheritors[0] = 0xDDA2F2E159d2Ce413Bd0e1dF5988Ee7A803432E3;
+                _inheritors[1] = 0x6ddb97905c9Eb0A41e6400E1cD31A063214a4068;
+                _inheritors[2] = addr3;
+                _inheritors[3] = address(this);
+                uint64[] memory _periodOrDateArray = new uint64[](4);
+                _periodOrDateArray[0] = uint64(0);
+                _periodOrDateArray[1] = uint64(300);
+                _periodOrDateArray[2] = uint64(3);
+                _periodOrDateArray[3] = uint64(4);
+                proxy01 = payable(factory.deployProxyForTrust(
+                    address(impl_01), 2,
+                    _inheritors,
+                    _periodOrDateArray, 
+                    'Silent time DeTrust',
+                    keccak256("PROMO")
+                ));
+                IERC20(p.ubdn_address).transfer(proxy01, 22_000e18);
+            }
+            console2.log("detrust_01 (Silent) deployed at('%s')", address(proxy01));
+            console2.log("https://%s/address/%s#code\n", explorer_url, address(proxy01));
           
             /////////////////////////
             //   tx_example  erc20 //
             /////////////////////////
-            IERC20(p.ubdn_address).transfer(proxy, 22_000e18);
+            {
+                DeTrustMultisigOnchainModel_00 multisig_instance = DeTrustMultisigOnchainModel_00(proxy);
+                bytes memory _data = abi.encodeWithSignature(
+                    "transfer(address,uint256)",
+                    0x4b664eD07D19d0b192A037Cfb331644cA536029d, 7000e18
+                );
+                console2.log("createAndSign....erc20");
+                multisig_instance.createAndSign(address(p.ubdn_address), 0, _data);
 
-            DeTrustMultisigOnchainModel_00 multisig_instance = DeTrustMultisigOnchainModel_00(proxy);
-            bytes memory _data = abi.encodeWithSignature(
-                "transfer(address,uint256)",
-                0x4b664eD07D19d0b192A037Cfb331644cA536029d, 7000e18
-            );
-            console2.log("createAndSign....erc20");
-            multisig_instance.createAndSign(address(p.ubdn_address), 0, _data);
+                // tx send ether
+                _data = "";
+                console2.log("createAndSign....send ether");
+                multisig_instance.createAndSign(addr3, 1, _data);
+            }
 
-            // tx send ether
-            _data = "";
-            console2.log("createAndSign....send ether");
-            multisig_instance.createAndSign(addr3, 1, _data);
+            {
+                DeTrustMultisigOnchainModel_01 multisig_instance = DeTrustMultisigOnchainModel_01(proxy01);
+                bytes memory _data = abi.encodeWithSignature(
+                    "transfer(address,uint256)",
+                    0x4b664eD07D19d0b192A037Cfb331644cA536029d, 7000e18
+                );
+                console2.log("createAndSign....erc20");
+                multisig_instance.createAndSign(address(p.ubdn_address), 0, _data);
 
+                // tx send ether
+                _data = "";
+                console2.log("createAndSign....send ether");
+                multisig_instance.createAndSign(addr3, 1, _data);
+                multisig_instance.iAmAlive();
+
+            }
         }
-            
             vm.stopBroadcast();
             console2.log("Initialisation finished");
     }

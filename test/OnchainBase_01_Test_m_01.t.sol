@@ -104,6 +104,7 @@ contract OnchainBase_01_Test is Test {
         // Execute
         multisig_instance.executeOp(lastNonce);    
         assertEq(erc20.balanceOf(addr1), sendERC20Amount/2);
+        assertEq(multisig_instance.getMultisigLastNonce(), 0);
     }
 
     function test_addSigner_FailAndOK() public {
