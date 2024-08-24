@@ -190,7 +190,8 @@ abstract contract MultisigOnchainBase_01 is
      * @param _newPeriod new signer time param(dends on implementation)
      */ 
     function addSigner(address _newSigner, uint64 _newPeriod) 
-        external 
+        public
+        virtual 
         onlySelfSender
         returns(uint8 signersCount)
     {
@@ -265,6 +266,7 @@ abstract contract MultisigOnchainBase_01 is
         bytes memory _data
     ) 
         public
+        virtual
         returns(uint256 nonce_)
     {
         nonce_ = _createOp(_target, _value, _data);

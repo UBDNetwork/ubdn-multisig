@@ -87,7 +87,7 @@ contract FeeManager_01_a_Test_01 is Test {
     function test_checkPrepaidPeriodAndFactory() public {
         MockFeeManager_01.FeeManager_01_Storage memory info = feeM.geFeeManager_01_StorageInfo();
         //assertEq(info.fee.payedTill, payedTillBefore + feeM.ANNUAL_FEE_PERIOD());
-        assertEq(info.freeHoldPeriod, 1);
+        assertEq(info.freeHoldPeriod, block.timestamp + 1);
         assertEq(info.factory, address(this));
     }
 }

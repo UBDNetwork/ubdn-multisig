@@ -34,6 +34,8 @@ abstract contract FeeManager_01 is  Initializable,  ContextUpgradeable
     // keccak256(abi.encode(uint256(keccak256("ubdn.storage.FeeManager_01_Storage")) - 1)) & ~bytes32(uint256(0xff))
     bytes32 private constant FeeManager_01_StorageLocation =  0xd9c0a4844f162bd8c6e1703f4c7b7bb107741f9c9261bc1c32b5e10280fc4e00;    
     
+    error LowHoldBalance(uint256 need, uint256 fact);
+
     function _getFeeManager_01_StorageStorage() 
         private pure returns (FeeManager_01_Storage storage $) 
     {
@@ -89,7 +91,7 @@ abstract contract FeeManager_01 is  Initializable,  ContextUpgradeable
         $.fee.feeBeneficiary = _feeBeneficiary;
         $.fee.payedTill = uint64(block.timestamp) + ANNUAL_FEE_PERIOD + _feePrepaidPeriod;
         $.factory = msg.sender;
-        $.freeHoldPeriod = _feePrepaidPeriod;
+        $.freeHoldPeriod = uint64(block.timestamp) + _feePrepaidPeriod;
     }
     ///////////////////////////////////////////////////////////////////////////////////
 
@@ -137,22 +139,26 @@ abstract contract FeeManager_01 is  Initializable,  ContextUpgradeable
         isPayed = $.fee.payedTill >= uint64(block.timestamp); 
     }
 
-    function checkMinHoldRules(address[] calldata _holders) 
+    function checkMinHoldRules(address[] memory _holders) 
         public 
         view 
         returns(bool)
     {
-        uint256 currentHoldBalance;
-        (uint256 amt, address adr) = _getMinHoldInfo();
-        for (uint256 i = 0; i < _holders.length; ++i) {
-            currentHoldBalance += IERC20(adr).balanceOf(_holders[i]);
-        }
-        if (currentHoldBalance >= amt) {
-            return true;
+        FeeManager_01_Storage memory $ = _getFeeManager_01_StorageStorage();
+        if (uint64(block.timestamp) > $.freeHoldPeriod) {
+            uint256 currentHoldBalance;
+            (uint256 amt, address adr) = _getMinHoldInfo();
+            for (uint256 i = 0; i < _holders.length; ++i) {
+                currentHoldBalance += IERC20(adr).balanceOf(_holders[i]);
+            }
+            if (currentHoldBalance >= amt) {
+                return true;
+            } else {
+                revert LowHoldBalance(amt, currentHoldBalance);
+            }
         } else {
-            return false;
+            return true;
         }
-
     }
 
 

@@ -20,8 +20,6 @@ contract DeTrustMultisigOnchainModel_01 is MultisigOnchainBase_01, FeeManager_01
     struct DeTrustMultisigOnchainModel_01_Storage {
         uint64 lastOwnerOp;
         uint64 silenceTime;
-
-
     }
 
     // keccak256(abi.encode(uint256(keccak256("ubdn.storage.DeTrustMultisigOnchainModel_01_Storage")) - 1)) & ~bytes32(uint256(0xff))
@@ -56,9 +54,6 @@ contract DeTrustMultisigOnchainModel_01 is MultisigOnchainBase_01, FeeManager_01
         __FeeManager_01_init(
             _feeToken, _feeAmount, _feeBeneficiary, _feePrepaidPeriod
         );
-
-        
-
     }
     
     /**
@@ -97,6 +92,27 @@ contract DeTrustMultisigOnchainModel_01 is MultisigOnchainBase_01, FeeManager_01
 
     }
 
+   /**  
+     * @dev Use this method for save metaTx and make first signature onchain
+     * @param _target address of dApp smart contract
+     * @param _value amount of native token in tx(msg.value)
+     * @param _data ABI encoded transaction payload
+     */
+    function createAndSign(
+        address _target,
+        uint256 _value,
+        bytes memory _data
+    )
+       public
+       override
+       returns(uint256 nonce_)
+    {
+
+        _checkHoldForAddresses();
+        _chargeFee(0);
+        nonce_ = super.createAndSign(_target, _value, _data);
+    } 
+ 
     /**  
      * @dev Use this method for sign metaTx onchain and execute as well
      * @param _nonce index of saved Meta Tx
@@ -107,6 +123,7 @@ contract DeTrustMultisigOnchainModel_01 is MultisigOnchainBase_01, FeeManager_01
         override 
         returns(uint256 signedByCount) 
     {
+        _checkHoldForAddresses();
         _chargeFee(0);
         signedByCount = super.signAndExecute(_nonce, _execWhenReady);
     }
@@ -116,6 +133,7 @@ contract DeTrustMultisigOnchainModel_01 is MultisigOnchainBase_01, FeeManager_01
      * @param _nonce index of saved Meta Tx
      */
     function executeOp(uint256 _nonce) public override returns(bytes memory r){
+        _checkHoldForAddresses();
         _chargeFee(0);
         r = super.executeOp(_nonce);
     }
@@ -125,6 +143,7 @@ contract DeTrustMultisigOnchainModel_01 is MultisigOnchainBase_01, FeeManager_01
      * @param _nonces index of saved Meta Tx
      */
     function executeOp(uint256[] memory _nonces) public override returns(bytes memory r){
+        _checkHoldForAddresses();
         _chargeFee(0);
         r = super.executeOp(_nonces);
     }   
@@ -166,7 +185,6 @@ contract DeTrustMultisigOnchainModel_01 is MultisigOnchainBase_01, FeeManager_01
         public 
         view
         override
-        onlySelfSender
     {
         _coSigner;
         _newPeriod;
@@ -203,5 +221,12 @@ contract DeTrustMultisigOnchainModel_01 is MultisigOnchainBase_01, FeeManager_01
             $.lastOwnerOp = uint64(block.timestamp);
         }
     } 
+
+    function _checkHoldForAddresses() internal view {
+        address[] memory hldrs = new address[](2);
+        hldrs[0] = address(this);
+        hldrs[1] = getMultisigOnchainBase_01().cosigners[0].signer;
+        checkMinHoldRules(hldrs);
+    }
 
 }
