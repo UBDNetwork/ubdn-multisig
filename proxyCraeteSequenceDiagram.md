@@ -5,10 +5,11 @@ sequenceDiagram
   participant ModelReg as Model Registry
   participant ProxyReg as Proxy Registry
   participant PromoReg as Promo Manager
-
-  Customer ->>+ Factory: deployProxyForTrust: modelAddress
+  
+  activate Factory
+  Customer ->> Factory: deployProxyForTrust: modelAddress
   Factory ->>+ ModelReg: isModelEnable: address, sender
-  ModelReg ->>+ Factory: rules
+  ModelReg -->>+ Factory: rules
   Factory ->>+ ModelReg: checkRule: address, sender
   Factory ->>+ ModelReg: chargeFeeOnCreate: address, sender, promo
   activate ModelReg
@@ -22,5 +23,5 @@ sequenceDiagram
   Factory -) Proxy: initialize
   Factory ->> ProxyReg: registerProxy((proxy, _inheritors, _name)
   Factory -->> Customer: proxy address
-
+  deactivate Factory
 ```
