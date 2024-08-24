@@ -30,7 +30,7 @@ contract FeeManager_01_a_Test_01 is Test {
             address(erc20), // fee token
             feeAmount,
             address(11), // beneficiary
-            0); // paied till
+            1); // paied till
         currentTime = uint64(block.timestamp);
     }
 
@@ -40,14 +40,14 @@ contract FeeManager_01_a_Test_01 is Test {
         erc20.transfer(address(feeM), feeAmount);
 
         MockFeeManager_01.FeeManager_01_Storage memory info = feeM.geFeeManager_01_StorageInfo();
-        assertEq(info.fee.payedTill, currentTime + feeM.ANNUAL_FEE_PERIOD());
+        assertEq(info.fee.payedTill, currentTime + feeM.ANNUAL_FEE_PERIOD() + 1);
         vm.startPrank(address(1));
         uint64 period = 1;
         uint64 payedTillBefore = info.fee.payedTill;
         feeM.chargeFee(period);
         vm.stopPrank();
         info = feeM.geFeeManager_01_StorageInfo();
-        assertEq(info.fee.payedTill, payedTillBefore + feeM.ANNUAL_FEE_PERIOD());
+        assertEq(info.fee.payedTill, payedTillBefore + feeM.ANNUAL_FEE_PERIOD() );
         assertEq(feeM.isAnnualFeePayed(), true);
     }
 
@@ -82,8 +82,12 @@ contract FeeManager_01_a_Test_01 is Test {
         feeM.chargeFee(0);
         info = feeM.geFeeManager_01_StorageInfo();
         assertEq(info.fee.payedTill, payedTillBefore + feeM.ANNUAL_FEE_PERIOD());
+    }
 
-
-
+    function test_checkPrepaidPeriodAndFactory() public {
+        MockFeeManager_01.FeeManager_01_Storage memory info = feeM.geFeeManager_01_StorageInfo();
+        //assertEq(info.fee.payedTill, payedTillBefore + feeM.ANNUAL_FEE_PERIOD());
+        assertEq(info.fee.freeHoldPeriod, 1);
+        assertEq(info.fee.factory, address(this));
     }
 }

@@ -19,6 +19,8 @@ abstract contract FeeManager_01 is  Initializable,  ContextUpgradeable
         address feeToken;
         uint64  payedTill;
         address feeBeneficiary;
+        uint64  freeHoldPeriod;
+        address factory;
     }
 
     /// @custom:storage-location erc7201:ubdn.storage.DeTrustMultisigModel_01
@@ -80,13 +82,13 @@ abstract contract FeeManager_01 is  Initializable,  ContextUpgradeable
         
     ) internal onlyInitializing 
     {
-        
         FeeManager_01_Storage storage $ = _getFeeManager_01_StorageStorage();
         $.fee.feeToken = _feeToken;
         $.fee.feeAmount = _feeAmount;
         $.fee.feeBeneficiary = _feeBeneficiary;
         $.fee.payedTill = uint64(block.timestamp) + ANNUAL_FEE_PERIOD + _feePrepaidPeriod;
-        
+        $.fee.factory = msg.sender;
+        $.fee.freeHoldPeriod = _feePrepaidPeriod;
     }
     ///////////////////////////////////////////////////////////////////////////////////
 
