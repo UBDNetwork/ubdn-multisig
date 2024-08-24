@@ -37,11 +37,13 @@ contract DeTrustMultisigOnchainModel_01_a_02 is Test {
     uint64 deployTime;
 
     MockERC20 public erc20;
+    MockERC20 public erc20Hold;
 
     receive() external payable virtual {}
     function setUp() public {
         impl_01 = new DeTrustMultisigOnchainModel_01();
         erc20 = new MockERC20('UBDN token', 'UBDN');
+        erc20Hold = new MockERC20('UBDN1 token', 'UBDN1');
         modelReg = new DeTrustMultisigModelRegistry(beneficiary); 
         userReg = new UsersDeTrustMultisigRegistry();
         factory = new DeTrustMultisigFactory(address(modelReg), address(userReg));
@@ -59,6 +61,12 @@ contract DeTrustMultisigOnchainModel_01_a_02 is Test {
             uint8(modelReg.isModelEnable(address(impl_01), address(1))), 
             uint8(0x05)
         );
+
+        // set hold token contract
+        modelReg.setMinHoldAddress(address(erc20Hold));
+        // add hold token balance for creator - cosigner[0]
+        erc20Hold.transfer(address(1), modelReg.minHoldAmount());
+        
         // prepare data to deploy proxy
         for (uint160 i = 1; i < 6; i++) {
             inheritors[i - 1] =  address(i);

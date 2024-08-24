@@ -36,11 +36,13 @@ contract DeTrustMultisigOnchainModel_00_a_03 is Test {
     address payable proxy1;
 
     MockERC20 public erc20;
+    MockERC20 public erc20Hold;
 
     receive() external payable virtual {}
     function setUp() public {
         impl_00 = new DeTrustMultisigOnchainModel_00();
         erc20 = new MockERC20('UBDN token', 'UBDN');
+        erc20Hold = new MockERC20('UBDN1 token', 'UBDN1');
         modelReg = new DeTrustMultisigModelRegistry(beneficiary); 
         userReg = new UsersDeTrustMultisigRegistry();
         factory = new DeTrustMultisigFactory(address(modelReg), address(userReg));
@@ -51,6 +53,11 @@ contract DeTrustMultisigOnchainModel_00_a_03 is Test {
             address(impl_00),
             DeTrustMultisigModelRegistry.TrustModel(0x07, address(erc20), requiredAmount , address(0), feeAmount)
         );
+        // set hold token contract
+        modelReg.setMinHoldAddress(address(erc20Hold));
+        // add hold token balance for creator - cosigner[0]
+        erc20Hold.transfer(address(1), modelReg.minHoldAmount());
+
         assertEq(modelReg.getModelsList().length, 1);
         assertEq(modelReg.getModelsList()[0], address(impl_00));
 
