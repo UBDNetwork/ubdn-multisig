@@ -183,7 +183,7 @@ contract DeTrustMultisigOnchainModel_01 is MultisigOnchainBase_01, FeeManager_01
 
     function editSignerDate(address _coSigner, uint64 _newPeriod) 
         public 
-        view
+        pure
         override
     {
         _coSigner;

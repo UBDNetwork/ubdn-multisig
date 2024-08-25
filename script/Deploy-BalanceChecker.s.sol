@@ -40,7 +40,7 @@ contract DeployScriptBalanceChecker is Script {
         } else {
             ubdn_locker = address(0);
         }
-        console2.log("ubdn_address: %s", ubdn_locker); 
+        console2.log("ubdn_locker: %s", ubdn_locker); 
 
         
         //////////   Deploy   //////////////

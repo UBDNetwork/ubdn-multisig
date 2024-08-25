@@ -69,7 +69,7 @@ contract DeTrustMultisigFactory {
             
             // check model rules
             if (_rules & 0x02 == 0x02) {
-                modelRegistry.checkRules(_implAddress, msg.sender);
+                modelRegistry.checkRules(_implAddress, msg.sender, _promoHash);
             }
 
             // charge FEE if enabled

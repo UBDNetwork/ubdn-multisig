@@ -37,8 +37,16 @@ $ forge script script/Deploy.s.sol:DeployScript --rpc-url sepolia  --account ttw
 
 $ # Script for geting hash for staroge addresses
 $ forge script script/GetStorageSlot.s.sol:GetStorageSlot
-```
 
+$ # Script for BalnceCheckerDeploy
+$ forge script script/Deploy-BalanceChecker.s.sol:DeployScriptBalanceChecker --rpc-url sepolia  --account ttwo --sender 0xDDA2F2E159d2Ce413Bd0e1dF5988Ee7A803432E3 --broadcast --verify  --etherscan-api-key $ETHERSCAN_TOKEN
+
+```
+#### Ethereum Mainnet
+```shell
+$ # Script for BalnceCheckerDeploy
+$ forge script script/Deploy-BalanceChecker.s.sol:DeployScriptBalanceChecker --rpc-url mainet  --account ubd_deployer --sender 0x71373aa15b6d537E70138A39709B50e32C3660Ec --broadcast --verify  --etherscan-api-key $ETHERSCAN_TOKEN
+```
 
 ### Help
 

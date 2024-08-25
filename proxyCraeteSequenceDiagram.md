@@ -10,7 +10,7 @@ sequenceDiagram
   Customer ->> Factory: deployProxyForTrust: modelAddress
   Factory ->>+ ModelReg: isModelEnable: address, sender
   ModelReg -->>+ Factory: rules
-  Factory ->>+ ModelReg: checkRule: address, sender
+  Factory ->>+ ModelReg: checkRule: address, sender, promo
   Factory ->>+ ModelReg: chargeFeeOnCreate: address, sender, promo
   activate ModelReg
   ModelReg ->> PromoReg: getPrepaidPeriod

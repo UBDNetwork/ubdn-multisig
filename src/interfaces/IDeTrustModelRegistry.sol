@@ -34,7 +34,7 @@ interface IDeTrustModelRegistry {
     /**
      * @dev Returns `true` or revert with reason.
      */
-    function checkRules(address _impl, address _creator)
+    function checkRules(address _impl, address _creator, bytes32 _promoHash)
         external
         view
         returns (bool _ok);
