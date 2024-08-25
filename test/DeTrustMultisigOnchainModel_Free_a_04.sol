@@ -94,7 +94,6 @@ contract DeTrustMultisigOnchainModel_Free_a_04 is Test {
         assertEq(address(beneficiary).balance, feeAmount);
     }
 
-    // hold balance is not being checked, fee is not being charged
     function test_proxy1() public {
         // get proxy info
         DeTrustMultisigOnchainModel_Free multisig_instance = DeTrustMultisigOnchainModel_Free(proxy);
