@@ -189,7 +189,7 @@ contract DeployScript is Script {
         modelReg.setModelState(
             address(impl_00),
             DeTrustMultisigModelRegistry.TrustModel(
-                0x01, 
+                0x03, 
                 p.ubdn_balance_checker, 
                 p.neededERC20Amount, 
                 address(0), 
@@ -199,7 +199,7 @@ contract DeployScript is Script {
         modelReg.setModelState(
             address(impl_01),
              DeTrustMultisigModelRegistry.TrustModel(
-                bytes1(0x01), 
+                bytes1(0x03), 
                 p.ubdn_balance_checker, 
                 p.neededERC20Amount, 
                 address(0), 
@@ -210,8 +210,8 @@ contract DeployScript is Script {
             address(impl_free),
              DeTrustMultisigModelRegistry.TrustModel(
                 bytes1(0x01), 
-                p.ubdn_balance_checker, 
-                p.neededERC20Amount, 
+                address(0), 
+                0, 
                 address(0), 
                 0
             )
