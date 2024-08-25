@@ -120,14 +120,31 @@ contract DeTrustMultisigModelRegistry is IDeTrustModelRegistry, Ownable {
     /**
      * @dev Returns `true` or revert with reason.
      */
-    function checkRules(address _impl, address _creator)
+    function checkRules(address _impl, address _creator, bytes32 _promoHash)
         external
         view
         returns (bool _ok) 
     {
-        TrustModel  memory _m = approvedModels[_impl]; 
+        TrustModel  memory _m = approvedModels[_impl];
+        uint256 balanceForCheck =  _m.tokenBalance;
+
+        // If PromoCode option used then we need check 
+        // Promo code validity
+        if (promoCodeManager != address(0)) {
+            uint64 prePaiedPeriod_ = IPromoCodeManager(promoCodeManager).getPrepaidPeriod(
+                _impl,
+                _creator,
+                _promoHash
+            );
+            // If promocdoe have free prePaidPeriod
+            // then we dont need check hold balance on DeTrust Creation
+            if (prePaiedPeriod_ > 0) {
+                balanceForCheck = 0;
+            }
+        }
+
         require(
-            IERC20(_m.token).balanceOf(_creator) >= _m.tokenBalance,
+            IERC20(_m.token).balanceOf(_creator) >= balanceForCheck,
             "Too low Balance"
         );
         _ok = true;

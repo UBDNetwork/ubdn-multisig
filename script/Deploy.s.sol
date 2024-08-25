@@ -8,6 +8,7 @@ import "../lib/forge-std/src/StdJson.sol";
 import {DeTrustMultisigFactory}  from "../src/DeTrustMultisigFactory.sol";
 import {DeTrustMultisigOnchainModel_00} from "../src/DeTrustMultisigOnchainModel_00.sol";
 import {DeTrustMultisigOnchainModel_01} from "../src/DeTrustMultisigOnchainModel_01.sol";
+import {DeTrustMultisigOnchainModel_Free} from "../src/DeTrustMultisigOnchainModel_Free.sol";
 import {DeTrustMultisigModelRegistry} from "../src/DeTrustMultisigModelRegistry.sol";
 import {UsersDeTrustMultisigRegistry} from "../src/UsersDeTrustMultisigRegistry.sol";
 import {MockPromoManager} from "../src/mock/MockPromoManager.sol";
@@ -34,6 +35,7 @@ contract DeployScript is Script {
         address inheriter;
         uint256 silentPeriod;
         address fee_benefeciary;
+        address ubdn_balance_checker;
     }
 
 
@@ -47,7 +49,10 @@ contract DeployScript is Script {
 
     function run() public {
         console2.log("Chain id: %s", vm.toString(block.chainid));
-        console2.log("Deployer address: %s, native balnce %s", msg.sender, msg.sender.balance);
+        console2.log(
+            "Deployer address: %s, "
+            "\n native balnce %s",
+            msg.sender, msg.sender.balance);
          
         // Load json with chain params
         //string memory root = vm.projectRoot();
@@ -64,7 +69,13 @@ contract DeployScript is Script {
         } else {
             p.ubdn_address = address(0);
         }
-        console2.log("ubdn_address: %s", p.ubdn_address); 
+        if  (p.ubdn_address != address(0)){
+            console2.log("ubdn_address: %s, \n ubdn balnce %s",
+                p.ubdn_address, 
+                IERC20(p.ubdn_address).balanceOf(msg.sender)/1e18
+            ); 
+        }
+        
 
         //uint256 neededERC20Amount;
         key = string.concat(".", vm.toString(block.chainid),".neededERC20Amount");
@@ -105,6 +116,16 @@ contract DeployScript is Script {
             p.fee_benefeciary = msg.sender;
         }
         console2.log("fee_benefeciary: %s", p.fee_benefeciary); 
+
+        //address ubdn_balance_checker;
+        key = string.concat(".", vm.toString(block.chainid),".ubdn_balance_checker");
+        if (vm.keyExists(params_json_file, key)) 
+        {
+            p.ubdn_balance_checker = params_json_file.readAddress(key);
+        } else {
+            p.ubdn_balance_checker = address(0);
+        }
+        console2.log("ubdn_balance_checker: %s", p.ubdn_balance_checker); 
         
 
         //////////   Deploy   //////////////
@@ -114,6 +135,7 @@ contract DeployScript is Script {
         DeTrustMultisigFactory factory = new DeTrustMultisigFactory(address(modelReg), address(userReg));
         DeTrustMultisigOnchainModel_00 impl_00 = new DeTrustMultisigOnchainModel_00();
         DeTrustMultisigOnchainModel_01 impl_01 = new DeTrustMultisigOnchainModel_01();
+        DeTrustMultisigOnchainModel_Free impl_free = new DeTrustMultisigOnchainModel_Free();
         MockPromoManager promoM = new MockPromoManager();
         vm.stopBroadcast();
         
@@ -139,6 +161,9 @@ contract DeployScript is Script {
         console2.log("https://%s/address/%s#code\n", explorer_url, address(impl_00));
         console2.log("\n**DeTrustMultisigOnchainModel_01** ");
         console2.log("https://%s/address/%s#code\n", explorer_url, address(impl_01));
+        console2.log("\n**DeTrustMultisigOnchainModel_Free** ");
+        console2.log("https://%s/address/%s#code\n", explorer_url, address(impl_free));
+
 
 
         console2.log("```python");
@@ -147,6 +172,7 @@ contract DeployScript is Script {
         console2.log("factory = DeTrustMultisigFactory.at('%s')", address(factory));
         console2.log("impl_00 = DeTrustMultisigOnchainModel_00.at('%s')", address(impl_00));
         console2.log("impl_01 = DeTrustMultisigOnchainModel_01.at('%s')", address(impl_01));
+        console2.log("impl_free = DeTrustMultisigOnchainModel_Free.at('%s')", address(impl_free));
         console2.log("```");
    
         // ///////// End of pretty printing ////////////////
@@ -154,11 +180,17 @@ contract DeployScript is Script {
         // ///  Init ///
         console2.log("Init transactions....");
         vm.startBroadcast();
+        if (p.ubdn_balance_checker != address(0)){
+            modelReg.setMinHoldAddress(p.ubdn_balance_checker);    
+        } else {
+            modelReg.setMinHoldAddress(p.ubdn_address);    
+        }
+        
         modelReg.setModelState(
             address(impl_00),
             DeTrustMultisigModelRegistry.TrustModel(
-                0x03, 
-                p.ubdn_address, 
+                0x01, 
+                p.ubdn_balance_checker, 
                 p.neededERC20Amount, 
                 address(0), 
                 0
@@ -167,16 +199,26 @@ contract DeployScript is Script {
         modelReg.setModelState(
             address(impl_01),
              DeTrustMultisigModelRegistry.TrustModel(
-                bytes1(0x07), 
-                p.ubdn_address, 
+                bytes1(0x01), 
+                p.ubdn_balance_checker, 
                 p.neededERC20Amount, 
-                p.ubdn_address, 
-                2e18
+                address(0), 
+                0
+            )
+        );
+        modelReg.setModelState(
+            address(impl_free),
+             DeTrustMultisigModelRegistry.TrustModel(
+                bytes1(0x01), 
+                p.ubdn_balance_checker, 
+                p.neededERC20Amount, 
+                address(0), 
+                0
             )
         );
         userReg.setFactoryState(address(factory), true);
         // init - enable PROMO
-        modelReg.setPromoCodeManager(address(promoM));
+        //modelReg.setPromoCodeManager(address(promoM));
 
 
         // test transactions
@@ -184,6 +226,7 @@ contract DeployScript is Script {
             IERC20(p.ubdn_address).approve(address(modelReg), 22_000e18);
             address payable proxy;
             address payable proxy01;
+            address payable proxy02;
             {
                 address[] memory _inheritors = new address[](4);
                 _inheritors[0] = 0xDDA2F2E159d2Ce413Bd0e1dF5988Ee7A803432E3;
@@ -229,6 +272,28 @@ contract DeployScript is Script {
             }
             console2.log("detrust_01 (Silent) deployed at('%s')", address(proxy01));
             console2.log("https://%s/address/%s#code\n", explorer_url, address(proxy01));
+            {
+                address[] memory _inheritors = new address[](4);
+                _inheritors[0] = 0xDDA2F2E159d2Ce413Bd0e1dF5988Ee7A803432E3;
+                _inheritors[1] = 0x6ddb97905c9Eb0A41e6400E1cD31A063214a4068;
+                _inheritors[2] = addr3;
+                _inheritors[3] = address(this);
+                uint64[] memory _periodOrDateArray = new uint64[](4);
+                _periodOrDateArray[0] = uint64(0);
+                _periodOrDateArray[1] = uint64(2);
+                _periodOrDateArray[2] = uint64(3);
+                _periodOrDateArray[3] = uint64(4);
+                proxy02 = payable(factory.deployProxyForTrust(
+                    address(impl_free), 2,
+                    _inheritors,
+                    _periodOrDateArray, 
+                    'Universal DeTrust Free',
+                    keccak256("")
+                ));
+                IERC20(p.ubdn_address).transfer(proxy02, 22_000e18);
+            }
+            console2.log("detrust_Free deployed at('%s')", address(proxy02));
+            console2.log("https://%s/address/%s#code\n", explorer_url, address(proxy02));
           
             /////////////////////////
             //   tx_example  erc20 //
@@ -263,6 +328,21 @@ contract DeployScript is Script {
                 multisig_instance.createAndSign(addr3, 1, _data);
                 multisig_instance.iAmAlive();
 
+            }
+
+            {
+                DeTrustMultisigOnchainModel_Free multisig_instance = DeTrustMultisigOnchainModel_Free(proxy02);
+                bytes memory _data = abi.encodeWithSignature(
+                    "transfer(address,uint256)",
+                    0x4b664eD07D19d0b192A037Cfb331644cA536029d, 7000e18
+                );
+                console2.log("createAndSign....erc20");
+                multisig_instance.createAndSign(address(p.ubdn_address), 0, _data);
+
+                // tx send ether
+                _data = "";
+                console2.log("createAndSign....send ether");
+                multisig_instance.createAndSign(addr3, 1, _data);
             }
         }
             vm.stopBroadcast();

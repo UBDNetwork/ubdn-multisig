@@ -3,8 +3,9 @@
         "sub_reg": "0x937cc2f0e4E40Ebe774aFd01911e3D14B9cd21c0",
         "ubdn_address": "0xD624E5C89466A15812c1D45Ce1533be1F16C1702",
         "ubd_address": "0x08A0356dF4F4052accE757FaacCEc35b621bBDD2",
-        "neededERC20Amount": "100000000000000000000",
-        "fee_benefeciary": "0xE206f8AC6067d8253C57D86ac96A789Cd90ed4D4"
+        "neededERC20Amount": "0",
+        "fee_benefeciary": "0xE206f8AC6067d8253C57D86ac96A789Cd90ed4D4",
+        "ubdn_locker": "0x6D8b29c195b9478D678cD9eA7aD870ECfb0A869F"
     }, 
     "5":"goerli.etherscan.io",
     "56":{
@@ -33,11 +34,11 @@
         "sub_reg": "0x0000000000000000000000000000000000000011",
         "ubdn_address": "0x7ce7abb7F8794dCe67FB2dc4d8eBf2F033472730",
         "ubd_address": "0x3E4673D787dD89C96075Bf6a2bE0DFaB75cC6Be8",
-        "neededERC20Amount": "1000000000000000000",
+        "neededERC20Amount": "0",
         "inheriter": "0x71373aa15b6d537E70138A39709B50e32C3660Ec",
         "silentPeriod": "100",
-        "ubdn_locker": "0xCCF7028D83D0b6eD8e68124Efe07E5FaD1C4E17F"
-
+        "ubdn_locker": "0xCCF7028D83D0b6eD8e68124Efe07E5FaD1C4E17F",
+        "ubdn_balance_checker": "0xCe232a897E4d46d251f247Bc286eBAac60CeB94D"
     },
 
     "168587773": {
