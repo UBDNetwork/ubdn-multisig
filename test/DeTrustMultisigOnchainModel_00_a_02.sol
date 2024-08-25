@@ -34,11 +34,13 @@ contract DeTrustMultisigOnchainModel_00_a_02 is Test {
     address payable proxy;
 
     MockERC20 public erc20;
+    MockERC20 public erc20Hold;
 
     receive() external payable virtual {}
     function setUp() public {
         impl_00 = new DeTrustMultisigOnchainModel_00();
         erc20 = new MockERC20('UBDN token', 'UBDN');
+        erc20Hold = new MockERC20('UBDN1 token', 'UBDN1');
         modelReg = new DeTrustMultisigModelRegistry(beneficiary); 
         userReg = new UsersDeTrustMultisigRegistry();
         factory = new DeTrustMultisigFactory(address(modelReg), address(userReg));
@@ -49,13 +51,19 @@ contract DeTrustMultisigOnchainModel_00_a_02 is Test {
             address(impl_00),
             DeTrustMultisigModelRegistry.TrustModel(0x07, address(erc20), requiredAmount , address(erc20), feeAmount)
         );
-        console.logBytes1(modelReg.isModelEnable(address(impl_00), address(1)));
+        // console.logBytes1(modelReg.isModelEnable(address(impl_00), address(1)));
 
         userReg.setFactoryState(address(factory), true);
         assertEq(
             uint8(modelReg.isModelEnable(address(impl_00), address(1))), 
             uint8(0x07)
         );
+
+        // set hold token contract
+        modelReg.setMinHoldAddress(address(erc20Hold));
+        // add hold token balance for creator - cosigner[0]
+        erc20Hold.transfer(address(1), modelReg.minHoldAmount());
+
         // prepare data to deploy proxy
         for (uint160 i = 1; i < 6; i++) {
             inheritors[i - 1] =  address(i);
@@ -253,7 +261,7 @@ contract DeTrustMultisigOnchainModel_00_a_02 is Test {
         uint64 payedTillBefore = infoFee.fee.payedTill;
         uint256 balanceBefore = erc20.balanceOf(beneficiary);
         uint256 balanceBefore11 = erc20.balanceOf(address(11));
-        console2.log(erc20.balanceOf(address(11)));
+        // console2.log(erc20.balanceOf(address(11)));
         bytes memory _data = abi.encodeWithSignature(
             "transfer(address,uint256)",
             address(11), sendERC20Amount/2
