@@ -45,7 +45,7 @@ $ forge script script/Deploy-BalanceChecker.s.sol:DeployScriptBalanceChecker --r
 #### Ethereum Mainnet
 ```shell
 $ # Script for BalnceCheckerDeploy
-$ forge script script/Deploy-BalanceChecker.s.sol:DeployScriptBalanceChecker --rpc-url mainet  --account ubd_deployer --sender 0x71373aa15b6d537E70138A39709B50e32C3660Ec --broadcast --verify  --etherscan-api-key $ETHERSCAN_TOKEN
+$ forge script script/Deploy-BalanceChecker.s.sol:DeployScriptBalanceChecker --rpc-url mainnet  --account ubd_deployer --sender 0x71373aa15b6d537E70138A39709B50e32C3660Ec --broadcast --verify  --etherscan-api-key $ETHERSCAN_TOKEN
 ```
 
 ### Help
