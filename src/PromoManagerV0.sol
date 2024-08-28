@@ -9,7 +9,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
  * @dev This is a  simple custodian promo Code Manager.
  * Support two types: public and personal promo codes
  */
-contract PromoManager is Ownable, IPromoCodeManager {
+contract PromoManagerV0 is Ownable, IPromoCodeManager {
 
     struct PromoPeriod {
         uint256 validTill;
@@ -18,6 +18,12 @@ contract PromoManager is Ownable, IPromoCodeManager {
 
     mapping(bytes32 promo => PromoPeriod period) public promoCodes; 
     mapping(bytes32 promo => mapping(address creator => PromoPeriod period)) public promoCodesPersonal; 
+
+    event PromoCodeUpdate(
+        bytes32 indexed promoHash, 
+        uint256 validTill, 
+        uint64 indexed promoPeriod, 
+        address indexed user);
 
     constructor ()
         Ownable(msg.sender)
@@ -33,6 +39,7 @@ contract PromoManager is Ownable, IPromoCodeManager {
         PromoPeriod calldata _period
     ) external onlyOwner {
         promoCodes[_promoHash] = _period;
+        emit PromoCodeUpdate(_promoHash, _period.validTill, _period.promoPeriod, address(0));
     }
 
     /**
@@ -47,6 +54,7 @@ contract PromoManager is Ownable, IPromoCodeManager {
         address _user
     ) external onlyOwner {
         promoCodesPersonal[_promoHash][_user] = _period;
+        emit PromoCodeUpdate(_promoHash, _period.validTill, _period.promoPeriod, _user);
     }
 
     /**
