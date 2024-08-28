@@ -26,7 +26,13 @@ contract DeTrustMultisigFactory {
     IUsersDeTrustRegistry public trustRegistry;
     
     
-    event NewTrust(address Creator, address Model, address Trust, string Name);
+    event NewTrust(
+        address indexed Creator, 
+        address indexed Model, 
+        address indexed Trust, 
+        bytes32 PromoHash,
+        string Name
+    );
     
     /**
      * @dev Pass Model's and User's Registry contract addresses.  Zero addresses
@@ -97,7 +103,7 @@ contract DeTrustMultisigFactory {
         if (address(trustRegistry) != address(0)){
             trustRegistry.registerTrust(proxy, _inheritors, _name);
         }
-        emit NewTrust(msg.sender, _implAddress, proxy, _name);
+        emit NewTrust(msg.sender, _implAddress, proxy, _promoHash, _name);
     }
 
     function getMinHoldInfo() external view returns (uint256, address) {
