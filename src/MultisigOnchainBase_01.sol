@@ -171,12 +171,11 @@ abstract contract MultisigOnchainBase_01 is
 
     /**
      * @dev Use this method to change multisig threshold. 
-     * @param _newThreshold !!! must be greater or equal current cosigners number
+     * @param _newThreshold !!! must be less or equal current cosigners number
      */
     function changeThreshold(uint8 _newThreshold) external onlySelfSender {
         MultisigOnchainBase_01_Storage storage $ = _getMultisigOnchainBase_01_Storage();
 
-        //require(_newThreshold >= $.cosigners.length, "New Threshold less than co-signers count");
         require(_newThreshold <= $.cosigners.length, "New Threshold more than co-signers count");
         require(_newThreshold > 0 , "No zero threshold");
         emit ThresholdChanged($.threshold, _newThreshold);
