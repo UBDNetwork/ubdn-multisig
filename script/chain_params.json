@@ -1,11 +1,11 @@
 {   
     "1": {
-        "sub_reg": "0x937cc2f0e4E40Ebe774aFd01911e3D14B9cd21c0",
         "ubdn_address": "0xD624E5C89466A15812c1D45Ce1533be1F16C1702",
         "ubd_address": "0x08A0356dF4F4052accE757FaacCEc35b621bBDD2",
         "neededERC20Amount": "1024000000000000000000",
-        "fee_benefeciary": "0xE206f8AC6067d8253C57D86ac96A789Cd90ed4D4",
-        "ubdn_locker": "0x6D8b29c195b9478D678cD9eA7aD870ECfb0A869F"
+        "fee_benefeciary": "0x71373aa15b6d537E70138A39709B50e32C3660Ec",
+        "ubdn_locker": "0x6D8b29c195b9478D678cD9eA7aD870ECfb0A869F",
+        "ubdn_balance_checker": "0xe689c51aD4Eb5D17cC049274D7A8c0b7f03D2A22"
     }, 
     "5":"goerli.etherscan.io",
     "56":{
