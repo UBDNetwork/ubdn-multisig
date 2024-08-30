@@ -11,7 +11,7 @@ import {DeTrustMultisigOnchainModel_01} from "../src/DeTrustMultisigOnchainModel
 import {DeTrustMultisigOnchainModel_Free} from "../src/DeTrustMultisigOnchainModel_Free.sol";
 import {DeTrustMultisigModelRegistry} from "../src/DeTrustMultisigModelRegistry.sol";
 import {UsersDeTrustMultisigRegistry} from "../src/UsersDeTrustMultisigRegistry.sol";
-import {MockPromoManager} from "../src/mock/MockPromoManager.sol";
+import {PromoManagerV0} from "../src/PromoManagerV0.sol";
 
 // Address:     0x7EC0BF0a4D535Ea220c6bD961e352B752906D568
 // Private key: 0x1bbde125e133d7b485f332b8125b891ea2fbb6a957e758db72e6539d46e2cd71
@@ -52,7 +52,8 @@ contract DeployScript is Script {
         console2.log(
             "Deployer address: %s, "
             "\n native balnce %s",
-            msg.sender, msg.sender.balance);
+            msg.sender, msg.sender.balance
+        );
          
         // Load json with chain params
         //string memory root = vm.projectRoot();
@@ -136,7 +137,7 @@ contract DeployScript is Script {
         DeTrustMultisigOnchainModel_00 impl_00 = new DeTrustMultisigOnchainModel_00();
         DeTrustMultisigOnchainModel_01 impl_01 = new DeTrustMultisigOnchainModel_01();
         DeTrustMultisigOnchainModel_Free impl_free = new DeTrustMultisigOnchainModel_Free();
-        MockPromoManager promoM = new MockPromoManager();
+        PromoManagerV0 promoM = new PromoManagerV0();
         vm.stopBroadcast();
         
         ///////// Pretty printing ////////////////
@@ -163,6 +164,8 @@ contract DeployScript is Script {
         console2.log("https://%s/address/%s#code\n", explorer_url, address(impl_01));
         console2.log("\n**DeTrustMultisigOnchainModel_Free** ");
         console2.log("https://%s/address/%s#code\n", explorer_url, address(impl_free));
+        console2.log("\n**PromoManagerV0** ");
+        console2.log("https://%s/address/%s#code\n", explorer_url, address(promoM));
 
 
 
@@ -173,6 +176,7 @@ contract DeployScript is Script {
         console2.log("impl_00 = DeTrustMultisigOnchainModel_00.at('%s')", address(impl_00));
         console2.log("impl_01 = DeTrustMultisigOnchainModel_01.at('%s')", address(impl_01));
         console2.log("impl_free = DeTrustMultisigOnchainModel_Free.at('%s')", address(impl_free));
+        console2.log("promoM = PromoManagerV0.at('%s')", address(promoM));
         console2.log("```");
    
         // ///////// End of pretty printing ////////////////
@@ -218,7 +222,7 @@ contract DeployScript is Script {
         );
         userReg.setFactoryState(address(factory), true);
         // init - enable PROMO
-        //modelReg.setPromoCodeManager(address(promoM));
+        modelReg.setPromoCodeManager(address(promoM));
 
 
         // test transactions

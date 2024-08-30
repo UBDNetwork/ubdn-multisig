@@ -41,11 +41,28 @@ $ forge script script/GetStorageSlot.s.sol:GetStorageSlot
 $ # Script for BalnceCheckerDeploy
 $ forge script script/Deploy-BalanceChecker.s.sol:DeployScriptBalanceChecker --rpc-url sepolia  --account ttwo --sender 0xDDA2F2E159d2Ce413Bd0e1dF5988Ee7A803432E3 --broadcast --verify  --etherscan-api-key $ETHERSCAN_TOKEN
 
+$ # Run for create factory onky 
+$ forge  create --rpc-url sepolia  --account ttwo   --etherscan-api-key $ETHERSCAN_TOKEN  --verify  src/DeTrustMultisigFactory.sol:DeTrustMultisigFactory --constructor-args 0xB5C0efdEc9a5252A778D91724e8F02e87CB06400 0x815eb5679636B4FdD38cC5282E018730047f9b6c
+
+$ # Sometimes need separate run this comand for verify if above fail
+$ forge verify-contract 0x4A89a183Ac7BaC19830492654723Eed997B301d7  ./src/DeTrustMultisigFactory.sol:DeTrustMultisigFactory  --num-of-optimizations 200 --compiler-version 0.8.26 --etherscan-api-key ${ETHERSCAN_TOKEN} --chain 11155111 --constructor-args $(cast abi-encode "constructor(address modelReg, address userReg)" 0xB5C0efdEc9a5252A778D91724e8F02e87CB06400 0x815eb5679636B4FdD38cC5282E018730047f9b6c)
+
+$ # userReg.setFactoryState(address(factory), true);
+$ cast  send 0x815eb5679636B4FdD38cC5282E018730047f9b6c  "setFactoryState(address,bool)" "0x4A89a183Ac7BaC19830492654723Eed997B301d7" "true" --rpc-url sepolia  --account ttwo
+
+
+$ # Run for create PromoManagerV0 
+$ forge  create --rpc-url sepolia  --account ttwo   --etherscan-api-key $ETHERSCAN_TOKEN  --verify  src/PromoManagerV0.sol:PromoManagerV0
+
+$ # Sometimes need separate run this comand for verify if above fail
+$ forge verify-contract 0x8687d6038B1FEe4820052b9055668610a41921Fb  ./src/PromoManagerV0.sol:PromoManagerV0  --num-of-optimizations 200 --compiler-version 0.8.26 --etherscan-api-key ${ETHERSCAN_TOKEN} --chain 11155111 
 ```
 #### Ethereum Mainnet
 ```shell
 $ # Script for BalnceCheckerDeploy
-$ forge script script/Deploy-BalanceChecker.s.sol:DeployScriptBalanceChecker --rpc-url mainet  --account ubd_deployer --sender 0x71373aa15b6d537E70138A39709B50e32C3660Ec --broadcast --verify  --etherscan-api-key $ETHERSCAN_TOKEN
+$ forge script script/Deploy-BalanceChecker.s.sol:DeployScriptBalanceChecker --rpc-url mainnet  --account ubd_deployer --sender 0x71373aa15b6d537E70138A39709B50e32C3660Ec --broadcast --verify  --etherscan-api-key $ETHERSCAN_TOKEN
+
+$ forge script script/Deploy-UBD.s.sol:DeployScriptUBD --rpc-url mainnet  --account ubd_deployer --sender 0x71373aa15b6d537E70138A39709B50e32C3660Ec --broadcast --verify  --etherscan-api-key $ETHERSCAN_TOKEN
 ```
 
 ### Help
