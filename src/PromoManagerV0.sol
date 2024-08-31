@@ -74,6 +74,7 @@ contract PromoManagerV0 is Ownable, IPromoCodeManager {
         PromoPeriod memory p = promoCodesPersonal[_promoHash][_creator]; 
         prePaidPeriod_ = p.promoPeriod;
         if (p.validTill < block.timestamp) {
+            prePaidPeriod_ = 0;
             p = promoCodes[_promoHash];
             if (p.validTill >= block.timestamp) {
                 prePaidPeriod_ = p.promoPeriod;
