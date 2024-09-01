@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import {Test, console2} from "forge-std/Test.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import "forge-std/console.sol";
 
 import {DeTrustMultisigFactory} from "../src/DeTrustMultisigFactory.sol";
@@ -88,6 +89,25 @@ contract PromoManagerV0_a_07 is Test {
         modelReg.setPromoCodeManager(address(promoManager));
         promoHash = promoManager.hlpGetPromoHash(promoCode);
         PromoManagerV0.PromoPeriod memory promoData = PromoManagerV0.PromoPeriod(validTillP, promoPeriodP);
+        vm.prank(address(1));
+        vm.expectRevert(
+            abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, 
+           address(1))
+        );
+        promoManager.setPromoPeriodForExactUser(
+            promoHash, 
+            promoData, 
+            address(1)
+        );
+
+        //by owner
+        vm.expectEmit();
+        emit PromoManagerV0.PromoCodeUpdate(
+            promoHash,
+            validTillP,
+            promoPeriodP,
+            address(1)
+        );
         promoManager.setPromoPeriodForExactUser(
             promoHash, 
             promoData, 
@@ -95,6 +115,20 @@ contract PromoManagerV0_a_07 is Test {
         );
 
         promoData = PromoManagerV0.PromoPeriod(validTillC, promoPeriodC);
+        vm.prank(address(1));
+        vm.expectRevert(
+            abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, 
+           address(1))
+        );
+        promoManager.setPromoPeriod(promoHash, promoData);
+        // by owner
+        vm.expectEmit();
+        emit PromoManagerV0.PromoCodeUpdate(
+            promoHash,
+            validTillC,
+            promoPeriodC,
+            address(0)
+        );
         promoManager.setPromoPeriod(promoHash, promoData);
     }
 

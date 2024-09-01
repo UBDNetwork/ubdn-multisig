@@ -165,7 +165,7 @@ contract PromoManagerV0_a_02 is Test {
 
         assertEq(infoFee.fee.payedTill, payedTillBefore);
 
-        vm.warp(multisig_instance.ANNUAL_FEE_PERIOD() + 1);
+        vm.warp(currentTime + multisig_instance.ANNUAL_FEE_PERIOD() + 1);
         vm.prank(address(1));
         vm.expectRevert();
         lastNonce = multisig_instance.createAndSign(address(15), 1e18, _data);

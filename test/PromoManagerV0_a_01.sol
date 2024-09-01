@@ -93,6 +93,9 @@ contract PromoManagerV0_a_01 is Test {
     function test_promo_1() public {
         // need pay fee to deploy - the promo has not the power in this case
         // hold Condition  is free by promo reason 
+        uint64 prepaidPeriod = promoManager.getPrepaidPeriod(address(impl_00), address(1), promoHash);
+        assertEq(prepaidPeriod, promoPeriod);
+
         erc20.transfer(address(1), feeAmount);
         vm.startPrank(address(1));
         erc20.approve(address(modelReg), feeAmount);
