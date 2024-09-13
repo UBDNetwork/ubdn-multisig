@@ -369,13 +369,13 @@ abstract contract MultisigOffchainBase_01 is
             for (uint256 j = 0; j < checkList.length; ++ j) {
                 if (
                     // record with exact signer
-                    checkList[i].signer == signedBy
+                    checkList[j].signer == signedBy
 
                     // no double signs with one saddress
-                    && !checkList[i].signOK  
+                    && !checkList[j].signOK  
 
                     // signer is valid to sign tx
-                    && checkList[i].isValid
+                    && checkList[j].isValid
                 ) 
                 {
                     checkList[i].signOK = true;
